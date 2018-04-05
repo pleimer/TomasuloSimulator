@@ -1,6 +1,4 @@
 #include "sim_ooo.h"
-#include "assem.h"
-#include "instructions.h"
 #include <stdlib.h>
 #include <iostream>
 #include <fstream>
@@ -8,6 +6,8 @@
 #include <string>
 #include <iomanip>
 #include <map>
+
+#include "assem.h"
 
 using namespace std;
 
@@ -55,20 +55,35 @@ sim_ooo::sim_ooo(unsigned mem_size,
 	data_memory = new unsigned char[data_memory_size];
 	
 	//fill here
+
+	//hadware instantiations
+	inst_memory = new InstructionMemory((unsigned)256);
+	inst_queue = new InstructionQueue(rob_size);//same size as ROB
+
 }
 	
 sim_ooo::~sim_ooo(){
+	delete[] data_memory;
 }
 
 void sim_ooo::init_exec_unit(exe_unit_t exec_unit, unsigned latency, unsigned instances){
 }
 
 void sim_ooo::load_program(const char *filename, unsigned base_address){
-	Instruction *i = Instruction_Factory::Get()->Create_Instruction(LW);
-	i->issue();
+	assembler as;
+	as.assemble(filename, inst_memory->get_mem_ptr());
+	pc.load(base_address);
 }
 
 void sim_ooo::run(unsigned cycles){
+	//pipeline
+	for (int i = 0; i < cycles; i++){
+	//fill instruction que
+		//while (!inst_queue->isFull()){
+			//inst_queue->push();
+		//}
+		
+	}
 }
 
 //reset the state of the sim_oooulator

@@ -5,15 +5,15 @@
 #include <stdbool.h>
 #include <string>
 #include <sstream>
+#include "hardware.h"
 
-using namespace std;
 
 #define UNDEFINED 0xFFFFFFFF //constant used for initialization
 #define NUM_GP_REGISTERS 32
 #define NUM_OPCODES 28
 #define NUM_STAGES 4
 
-typedef enum {LW, SW, ADD, ADDI, SUB, SUBI, XOR, XORI, OR, ORI, AND, ANDI, MULT, DIV, BEQZ, BNEZ, BLTZ, BGTZ, BLEZ, BGEZ, JUMP, EOP, LWS, SWS, ADDS, SUBS, MULTS, DIVS} opcode_t;
+
 
 typedef enum {INTEGER_RS, ADD_RS, MULT_RS, LOAD_B} res_station_t;
 
@@ -30,6 +30,12 @@ class sim_ooo{
 
 	//memory size in bytes
 	unsigned data_memory_size;
+
+
+	//hardware implementations
+	ProgramCounter pc;
+	InstructionMemory * inst_memory;
+	InstructionQueue * inst_queue;
 	
 public:
 

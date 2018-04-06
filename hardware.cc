@@ -1,5 +1,9 @@
 #include "hardware.h"
 
+#define INST_SIZE 32
+#define OP_SIZE 6
+#define OPCODE(X) ((opcode_t)((X & 0xFC000000) >> (INST_SIZE-OP_SIZE)))
+
 using namespace std;
 
 void ProgramCounter::pulse(){
@@ -24,8 +28,8 @@ InstructionMemory::~InstructionMemory(){
 
 Instruction* InstructionMemory::fetch(unsigned addrPtr){
 	//make instruction here
-	Instruction* i;
-	return i;
+	opcode_t opcode = OPCODE(inst_memory[addrPtr]);
+	return Instruction_Factory::Get()->Create_Instruction(opcode,inst_memory[addrPtr]);
 }
 
 InstructionQueue::InstructionQueue(unsigned QueueSize){

@@ -77,11 +77,12 @@ void sim_ooo::load_program(const char *filename, unsigned base_address){
 
 void sim_ooo::run(unsigned cycles){
 	//pipeline
+	//Instruction * i = Instruction_Factory::Get()->Create_Instruction(LW, );
 	for (int i = 0; i < cycles; i++){
 	//fill instruction que
-		//while (!inst_queue->isFull()){
-			//inst_queue->push();
-		//}
+		/*while (!inst_queue->isFull()){
+			inst_queue->push();
+		}*/
 		
 	}
 }

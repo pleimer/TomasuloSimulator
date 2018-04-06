@@ -22,7 +22,7 @@ public:
 	virtual void commit() = 0;
 };
 
-typedef Instruction* (__stdcall *CreateInstFn)(int bit_inst); //funct pointer to class creator
+typedef Instruction* (*CreateInstFn)(int bit_inst); //funct pointer to class creator
 
 class Instruction_Factory{
 	private:

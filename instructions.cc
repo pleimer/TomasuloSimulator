@@ -9,8 +9,23 @@
 
 using namespace std;
 
+#define IMM_MASK 0x0000FFFF
+#define R1(X) (X << (INST_SIZE - OP_SIZE - REG_REF_SIZE))
+#define R2(X) (X << (INST_SIZE - OP_SIZE - REG_REF_SIZE*2))
+#define R3(X) (X << (INST_SIZE - OP_SIZE - REG_REF_SIZE*3))
+
 Instruction::Instruction(int bit_inst){
 	this->bit_inst = bit_inst;
+	type = OPCODE(bit_inst);
+
+	immediate = IMM_UNUSED;
+	RD = REG_EMPTY;
+	RS = REG_EMPTY;
+	RT = REG_EMPTY;
+}
+
+void Instruction::print(){
+	cout << type << endl;
 }
 
 Instruction_Factory::~Instruction_Factory(){
@@ -24,7 +39,12 @@ Instruction_Factory *Instruction_Factory::Get(){
 
 class LW : public Instruction {
 public:
-	LW(int bit_inst) : Instruction(bit_inst){}
+	LW(int bit_inst) : Instruction(bit_inst){
+		type = "LW";
+
+		RD = R1(bit_inst);
+		RS = R2(bit_inst);
+	}
 	void issue(){
 		cout << "Not programmed. " << endl;
 	}
@@ -42,7 +62,12 @@ public:
 
 class SW : public Instruction {
 public:
-	SW(int bit_inst) : Instruction(bit_inst){}
+	SW(int bit_inst) : Instruction(bit_inst){
+		type = "SW";
+
+		RS = R2(bit_inst);
+		RT = R1(bit_inst);
+	}
 	void issue(){
 		cout << "Not programmed. " << endl;
 	}
@@ -60,7 +85,12 @@ public:
 
 class ADD : public Instruction {
 public:
-	ADD(int bit_inst) : Instruction(bit_inst){}
+	ADD(int bit_inst) : Instruction(bit_inst){
+		type = "ADD";
+		RD = R1(bit_inst);
+		RS = R2(bit_inst);
+		RT = R3(bit_inst);
+	}
 	void issue(){
 		cout << "Not programmed. " << endl;
 	}
@@ -78,7 +108,12 @@ public:
 
 class ADDI : public Instruction {
 public:
-	ADDI(int bit_inst) : Instruction(bit_inst){}
+	ADDI(int bit_inst) : Instruction(bit_inst){
+		type = "ADDI";
+		RD = R1(bit_inst);
+		RS = R2(bit_inst);
+		immediate = IMM_MASK & bit_inst;
+	}
 	void issue(){
 		cout << "Not programmed. " << endl;
 	}
@@ -96,7 +131,12 @@ public:
 
 class SUB : public Instruction {
 public:
-	SUB(int bit_inst) : Instruction(bit_inst){}
+	SUB(int bit_inst) : Instruction(bit_inst){
+		type = "SUB";
+		RD = R1(bit_inst);
+		RS = R2(bit_inst);
+		RT = R3(bit_inst);
+	}
 	void issue(){
 		cout << "Not programmed. " << endl;
 	}
@@ -114,7 +154,12 @@ public:
 
 class SUBI : public Instruction {
 public:
-	SUBI(int bit_inst) : Instruction(bit_inst){}
+	SUBI(int bit_inst) : Instruction(bit_inst){
+		type = "SUBI";
+		RD = R1(bit_inst);
+		RS = R2(bit_inst);
+		immediate = IMM_MASK & bit_inst;
+	}
 	void issue(){
 		cout << "Not programmed. " << endl;
 	}
@@ -132,7 +177,12 @@ public:
 
 class XOR : public Instruction {
 public:
-	XOR(int bit_inst) : Instruction(bit_inst){}
+	XOR(int bit_inst) : Instruction(bit_inst){
+		type = "XOR";
+		RD = R1(bit_inst);
+		RS = R2(bit_inst);
+		RT = R3(bit_inst);
+	}
 	void issue(){
 		cout << "Not programmed. " << endl;
 	}
@@ -150,7 +200,12 @@ public:
 
 class XORI : public Instruction {
 public:
-	XORI(int bit_inst) : Instruction(bit_inst){}
+	XORI(int bit_inst) : Instruction(bit_inst){
+		type = "XORI";
+		RD = R1(bit_inst);
+		RS = R2(bit_inst);
+		immediate = IMM_MASK & bit_inst;
+	}
 	void issue(){
 		cout << "Not programmed. " << endl;
 	}
@@ -168,7 +223,12 @@ public:
 
 class OR : public Instruction {
 public:
-	OR(int bit_inst) : Instruction(bit_inst){}
+	OR(int bit_inst) : Instruction(bit_inst){
+		type = "OR";
+		RD = R1(bit_inst);
+		RS = R2(bit_inst);
+		RT = R3(bit_inst);
+	}
 	void issue(){
 		cout << "Not programmed. " << endl;
 	}
@@ -186,7 +246,12 @@ public:
 
 class ORI : public Instruction {
 public:
-	ORI(int bit_inst) : Instruction(bit_inst){}
+	ORI(int bit_inst) : Instruction(bit_inst){
+		type = "ORI";
+		RD = R1(bit_inst);
+		RS = R2(bit_inst);
+		immediate = IMM_MASK & bit_inst;
+	}
 	void issue(){
 		cout << "Not programmed. " << endl;
 	}
@@ -204,7 +269,12 @@ public:
 
 class AND : public Instruction {
 public:
-	AND(int bit_inst) : Instruction(bit_inst){}
+	AND(int bit_inst) : Instruction(bit_inst){
+		type = "AND";
+		RD = R1(bit_inst);
+		RS = R2(bit_inst);
+		RT = R3(bit_inst);
+	}
 	void issue(){
 		cout << "Not programmed. " << endl;
 	}
@@ -222,7 +292,12 @@ public:
 
 class ANDI : public Instruction {
 public:
-	ANDI(int bit_inst) : Instruction(bit_inst){}
+	ANDI(int bit_inst) : Instruction(bit_inst){
+		type = "ANDI";
+		RD = R1(bit_inst);
+		RS = R2(bit_inst);
+		immediate = IMM_MASK & bit_inst;
+	}
 	void issue(){
 		cout << "Not programmed. " << endl;
 	}
@@ -240,7 +315,12 @@ public:
 
 class MULT : public Instruction {
 public:
-	MULT(int bit_inst) : Instruction(bit_inst){}
+	MULT(int bit_inst) : Instruction(bit_inst){
+		type = "MULT";
+		RD = R1(bit_inst);
+		RS = R2(bit_inst);
+		RT = R3(bit_inst);
+	}
 	void issue(){
 		cout << "Not programmed. " << endl;
 	}
@@ -258,7 +338,12 @@ public:
 
 class DIV : public Instruction {
 public:
-	DIV(int bit_inst) : Instruction(bit_inst){}
+	DIV(int bit_inst) : Instruction(bit_inst){
+		type = "DIV";
+		RD = R1(bit_inst);
+		RS = R2(bit_inst);
+		RT = R3(bit_inst);
+	}
 	void issue(){
 		cout << "Not programmed. " << endl;
 	}
@@ -276,7 +361,11 @@ public:
 
 class BEQZ : public Instruction {
 public:
-	BEQZ(int bit_inst) : Instruction(bit_inst){}
+	BEQZ(int bit_inst) : Instruction(bit_inst){
+		type = "BEQZ";
+		RS = R1(bit_inst);
+		immediate = bit_inst & IMM_MASK;
+	}
 	void issue(){
 		cout << "Not programmed. " << endl;
 	}
@@ -294,7 +383,11 @@ public:
 
 class BNEZ : public Instruction {
 public:
-	BNEZ(int bit_inst) : Instruction(bit_inst){}
+	BNEZ(int bit_inst) : Instruction(bit_inst){
+		type = "BNEZ";
+		RS = R1(bit_inst);
+		immediate = bit_inst & IMM_MASK;
+	}
 	void issue(){
 		cout << "Not programmed. " << endl;
 	}
@@ -312,7 +405,11 @@ public:
 
 class BLTZ : public Instruction {
 public:
-	BLTZ(int bit_inst) : Instruction(bit_inst){}
+	BLTZ(int bit_inst) : Instruction(bit_inst){
+		type = "BLTZ";
+		RS = R1(bit_inst);
+		immediate = bit_inst & IMM_MASK;
+	}
 	void issue(){
 		cout << "Not programmed. " << endl;
 	}
@@ -330,7 +427,11 @@ public:
 
 class BGTZ : public Instruction {
 public:
-	BGTZ(int bit_inst) : Instruction(bit_inst){}
+	BGTZ(int bit_inst) : Instruction(bit_inst){
+		type = "BGTZ";
+		RS = R1(bit_inst);
+		immediate = bit_inst & IMM_MASK;
+	}
 	void issue(){
 		cout << "Not programmed. " << endl;
 	}
@@ -348,7 +449,11 @@ public:
 
 class BLEZ : public Instruction {
 public:
-	BLEZ(int bit_inst) : Instruction(bit_inst){}
+	BLEZ(int bit_inst) : Instruction(bit_inst){
+		type = "BLEZ";
+		RS = R1(bit_inst);
+		immediate = bit_inst & IMM_MASK;
+	}
 	void issue(){
 		cout << "Not programmed. " << endl;
 	}
@@ -366,7 +471,11 @@ public:
 
 class BGEZ : public Instruction {
 public:
-	BGEZ(int bit_inst) : Instruction(bit_inst){}
+	BGEZ(int bit_inst) : Instruction(bit_inst){
+		type = "BGEZ";
+		RS = R1(bit_inst);
+		immediate = bit_inst & IMM_MASK;
+	}
 	void issue(){
 		cout << "Not programmed. " << endl;
 	}
@@ -384,7 +493,10 @@ public:
 
 class JUMP : public Instruction {
 public:
-	JUMP(int bit_inst) : Instruction(bit_inst){}
+	JUMP(int bit_inst) : Instruction(bit_inst){
+		type = "JUMP";
+		immediate = bit_inst & IMM_MASK;
+	}
 	void issue(){
 		cout << "Not programmed. " << endl;
 	}
@@ -402,7 +514,9 @@ public:
 
 class EOP : public Instruction {
 public:
-	EOP(int bit_inst) : Instruction(bit_inst){}
+	EOP(int bit_inst) : Instruction(bit_inst){
+		type = "EOP";
+	}
 	void issue(){
 		cout << "Not programmed. " << endl;
 	}
@@ -420,7 +534,11 @@ public:
 
 class LWS : public Instruction {
 public:
-	LWS(int bit_inst) : Instruction(bit_inst){}
+	LWS(int bit_inst) : Instruction(bit_inst){
+		type = "LWS";
+		RD = R1(bit_inst);
+		RS = R2(bit_inst);
+	}
 	void issue(){
 		cout << "Not programmed. " << endl;
 	}
@@ -438,7 +556,11 @@ public:
 
 class SWS : public Instruction {
 public:
-	SWS(int bit_inst) : Instruction(bit_inst){}
+	SWS(int bit_inst) : Instruction(bit_inst){
+		type = "SWS";
+		RT = R1(bit_inst);
+		RS = R2(bit_inst);
+	}
 	void issue(){
 		cout << "Not programmed. " << endl;
 	}
@@ -456,7 +578,12 @@ public:
 
 class ADDS : public Instruction {
 public:
-	ADDS(int bit_inst) : Instruction(bit_inst){}
+	ADDS(int bit_inst) : Instruction(bit_inst){
+		type = "ADDS";
+		RD = R1(bit_inst);
+		RS = R2(bit_inst);
+		RT = R3(bit_inst);
+	}
 	void issue(){
 		cout << "Not programmed. " << endl;
 	}
@@ -474,7 +601,12 @@ public:
 
 class SUBS : public Instruction {
 public:
-	SUBS(int bit_inst) : Instruction(bit_inst){}
+	SUBS(int bit_inst) : Instruction(bit_inst){
+		type = "SUBS";
+		RD = R1(bit_inst);
+		RS = R2(bit_inst);
+		RT = R3(bit_inst);
+	}
 	void issue(){
 		cout << "Not programmed. " << endl;
 	}
@@ -492,7 +624,12 @@ public:
 
 class MULTS : public Instruction {
 public:
-	MULTS(int bit_inst) : Instruction(bit_inst){}
+	MULTS(int bit_inst) : Instruction(bit_inst){
+		type = "MULTS";
+		RD = R1(bit_inst);
+		RS = R2(bit_inst);
+		RT = R3(bit_inst);
+	}
 	void issue(){
 		cout << "Not programmed. " << endl;
 	}
@@ -510,7 +647,12 @@ public:
 
 class DIVS : public Instruction {
 public:
-	DIVS(int bit_inst) : Instruction(bit_inst){}
+	DIVS(int bit_inst) : Instruction(bit_inst){
+		type = "DIVS";
+		RD = R1(bit_inst);
+		RS = R2(bit_inst);
+		RT = R3(bit_inst);
+	}
 	void issue(){
 		cout << "Not programmed. " << endl;
 	}

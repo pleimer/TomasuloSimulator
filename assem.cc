@@ -273,9 +273,19 @@ byte assembler::mapCode(token tok){ //return binary opcode value from token stri
 		return (byte)(JUMP);
 	if(cargo.compare("EOP")==0)
 		return (byte)(EOP);
-	
-	
-	
+	if(cargo.compare("LWS") == 0)
+		return (byte)(LWS);
+	if (cargo.compare("SWS") == 0)
+		return (byte)(SWS);
+	if (cargo.compare("ADDS") == 0)
+		return (byte)(ADDS);
+	if (cargo.compare("SUBS") == 0)
+		return (byte)(SUBS);
+	if (cargo.compare("MULTS") == 0)
+		return (byte)(MULTS);
+	if (cargo.compare("DIVS") == 0)
+		return (byte)(DIVS);
+
 	return 0xFC; //bad value
 }
 
@@ -352,7 +362,7 @@ tokenType lexer::detType(string token_str, unsigned int column){
 		if (column == 0 && *token_str.rbegin() == ':') //+
 			return LABEL;
 		else { //check for register
-			if (token_str[0] == 'R'){
+			if ((token_str[0] == 'R') || (token_str[0] == 'F')){
 				string regNum;
 				for(unsigned int i=1;i<token_str.length();i++){
 					regNum.push_back(token_str[i]);

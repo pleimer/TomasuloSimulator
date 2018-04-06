@@ -17,6 +17,8 @@ class ProgramCounter {
 public:
 	void pulse();
 	void load(unsigned addrPtr);
+	unsigned get();
+	void print();
 };
 
 class InstructionMemory{
@@ -24,9 +26,10 @@ class InstructionMemory{
 public:
 	InstructionMemory(unsigned size);
 	~InstructionMemory();
+
 	unsigned char * get_mem_ptr();
-	void print();
 	Instruction* fetch(unsigned addrPtr);
+	void print(unsigned start_address, unsigned end_address);
 };
 
 class InstructionQueue {
@@ -36,7 +39,7 @@ class InstructionQueue {
 public:
 	InstructionQueue(unsigned queueSize);
 	void push(Instruction* inst);
-	void pop(unsigned num = 1);
+	Instruction * pop();
 	bool isFull();
 };
 

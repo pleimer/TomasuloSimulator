@@ -1,8 +1,6 @@
 #include "hardware.h"
+#include <iomanip>
 
-#define INST_SIZE 32
-#define OP_SIZE 6
-#define OPCODE(X) ((opcode_t)((X & 0xFC000000) >> (INST_SIZE-OP_SIZE)))
 
 using namespace std;
 
@@ -12,6 +10,14 @@ void ProgramCounter::pulse(){
 
 void ProgramCounter::load(unsigned addrPtr){
 	this->addrPtr = addrPtr;
+}
+
+unsigned ProgramCounter::get(){
+	return addrPtr;
+}
+
+void ProgramCounter::print(){
+	cout << addrPtr << endl;
 }
 
 InstructionMemory::InstructionMemory(unsigned size){
@@ -28,8 +34,22 @@ InstructionMemory::~InstructionMemory(){
 
 Instruction* InstructionMemory::fetch(unsigned addrPtr){
 	//make instruction here
-	opcode_t opcode = OPCODE(inst_memory[addrPtr]);
-	return Instruction_Factory::Get()->Create_Instruction(opcode,inst_memory[addrPtr]);
+	int bit_inst = 0;
+	for (int i = 0; i<4; i++){
+		bit_inst = bit_inst | (inst_memory[addrPtr + i] << (3 - i) * 8);
+	}
+	opcode_t opcode = OPCODE(bit_inst);
+	return Instruction_Factory::Get()->Create_Instruction(opcode,bit_inst);
+}
+
+void InstructionMemory::print(unsigned start_address, unsigned end_address){
+	cout << "inst_memory[0x" << hex << setw(8) << setfill('0') << start_address << ":0x" << hex << setw(8) << setfill('0') << end_address << "]" << endl;
+	unsigned i;
+	for (i = start_address; i<end_address; i++){
+		if (i % 4 == 0) cout << "0x" << hex << setw(8) << setfill('0') << i << ": ";
+		cout << hex << setw(2) << setfill('0') << int(inst_memory[i]) << " ";
+		if (i % 4 == 3) cout << endl;
+	}
 }
 
 InstructionQueue::InstructionQueue(unsigned QueueSize){
@@ -41,11 +61,10 @@ void InstructionQueue::push(Instruction * inst){
 	else throw HardwareException();
 }
 
-void InstructionQueue::pop(unsigned num){
-	while (num > 0){
+Instruction * InstructionQueue::pop(){
+		Instruction *i = q.front();
 		q.pop();
-		num--;
-	}
+		return i;
 }
 
 bool InstructionQueue::isFull(){

@@ -73,17 +73,22 @@ void sim_ooo::load_program(const char *filename, unsigned base_address){
 	assembler as;
 	as.assemble(filename, inst_memory->get_mem_ptr());
 	pc.load(base_address);
+	inst_memory->print(0, 44);
 }
 
 void sim_ooo::run(unsigned cycles){
 	//pipeline
-	//Instruction * i = Instruction_Factory::Get()->Create_Instruction(LW, );
+	Instruction * inst;
 	for (int i = 0; i < cycles; i++){
 	//fill instruction que
-		/*while (!inst_queue->isFull()){
-			inst_queue->push();
-		}*/
-		
+		while (!inst_queue->isFull()){
+			inst = inst_memory->fetch(pc.get());
+			inst_queue->push(inst);
+			pc.pulse();
+		}
+		inst = inst_queue->pop();
+		cout << "Issued: ";
+		inst->print();
 	}
 }
 

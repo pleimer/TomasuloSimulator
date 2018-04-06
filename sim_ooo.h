@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 #include <stdbool.h>
-#include <string>
+#include <string.h>
 #include <sstream>
 #include "hardware.h"
 

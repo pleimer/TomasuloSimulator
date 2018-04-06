@@ -37,7 +37,7 @@ public:
 	void commit(){
 		cout << "Not programmed. " << endl;
 	}
-	static Instruction * __stdcall Create(int bit_inst) { return new LW(bit_inst); }
+	static Instruction *  Create(int bit_inst) { return new LW(bit_inst); }
 };
 
 class SW : public Instruction {
@@ -55,7 +55,7 @@ public:
 	void commit(){
 		cout << "Not programmed. " << endl;
 	}
-	static Instruction * __stdcall Create(int bit_inst) { return new SW(bit_inst); }
+	static Instruction *  Create(int bit_inst) { return new SW(bit_inst); }
 };
 
 class ADD : public Instruction {
@@ -73,7 +73,7 @@ public:
 	void commit(){
 		cout << "Not programmed. " << endl;
 	}
-	static Instruction * __stdcall Create(int bit_inst) { return new ADD(bit_inst); }
+	static Instruction *  Create(int bit_inst) { return new ADD(bit_inst); }
 };
 
 class ADDI : public Instruction {
@@ -91,7 +91,7 @@ public:
 	void commit(){
 		cout << "Not programmed. " << endl;
 	}
-	static Instruction * __stdcall Create(int bit_inst) { return new ADDI(bit_inst); }
+	static Instruction *  Create(int bit_inst) { return new ADDI(bit_inst); }
 };
 
 class SUB : public Instruction {
@@ -109,7 +109,7 @@ public:
 	void commit(){
 		cout << "Not programmed. " << endl;
 	}
-	static Instruction * __stdcall Create(int bit_inst) { return new SUB(bit_inst); }
+	static Instruction *  Create(int bit_inst) { return new SUB(bit_inst); }
 };
 
 class SUBI : public Instruction {
@@ -127,7 +127,7 @@ public:
 	void commit(){
 		cout << "Not programmed. " << endl;
 	}
-	static Instruction * __stdcall Create(int bit_inst) { return new SUBI(bit_inst); }
+	static Instruction *  Create(int bit_inst) { return new SUBI(bit_inst); }
 };
 
 class XOR : public Instruction {
@@ -145,7 +145,7 @@ public:
 	void commit(){
 		cout << "Not programmed. " << endl;
 	}
-	static Instruction * __stdcall Create(int bit_inst) { return new XOR(bit_inst); }
+	static Instruction *  Create(int bit_inst) { return new XOR(bit_inst); }
 };
 
 class XORI : public Instruction {
@@ -163,7 +163,7 @@ public:
 	void commit(){
 		cout << "Not programmed. " << endl;
 	}
-	static Instruction * __stdcall Create(int bit_inst) { return new XORI(bit_inst); }
+	static Instruction *  Create(int bit_inst) { return new XORI(bit_inst); }
 };
 
 class OR : public Instruction {
@@ -181,7 +181,7 @@ public:
 	void commit(){
 		cout << "Not programmed. " << endl;
 	}
-	static Instruction * __stdcall Create(int bit_inst) { return new OR(bit_inst); }
+	static Instruction *  Create(int bit_inst) { return new OR(bit_inst); }
 };
 
 class ORI : public Instruction {
@@ -199,7 +199,7 @@ public:
 	void commit(){
 		cout << "Not programmed. " << endl;
 	}
-	static Instruction * __stdcall Create(int bit_inst) { return new ORI(bit_inst); }
+	static Instruction *  Create(int bit_inst) { return new ORI(bit_inst); }
 };
 
 class AND : public Instruction {
@@ -217,7 +217,7 @@ public:
 	void commit(){
 		cout << "Not programmed. " << endl;
 	}
-	static Instruction * __stdcall Create(int bit_inst) { return new AND(bit_inst); }
+	static Instruction *  Create(int bit_inst) { return new AND(bit_inst); }
 };
 
 class ANDI : public Instruction {
@@ -235,7 +235,7 @@ public:
 	void commit(){
 		cout << "Not programmed. " << endl;
 	}
-	static Instruction * __stdcall Create(int bit_inst) { return new ANDI(bit_inst); }
+	static Instruction *  Create(int bit_inst) { return new ANDI(bit_inst); }
 };
 
 class MULT : public Instruction {
@@ -253,7 +253,7 @@ public:
 	void commit(){
 		cout << "Not programmed. " << endl;
 	}
-	static Instruction * __stdcall Create(int bit_inst) { return new MULT(bit_inst); }
+	static Instruction *  Create(int bit_inst) { return new MULT(bit_inst); }
 };
 
 class DIV : public Instruction {
@@ -271,7 +271,7 @@ public:
 	void commit(){
 		cout << "Not programmed. " << endl;
 	}
-	static Instruction * __stdcall Create(int bit_inst) { return new DIV(bit_inst); }
+	static Instruction *  Create(int bit_inst) { return new DIV(bit_inst); }
 };
 
 class BEQZ : public Instruction {
@@ -289,7 +289,7 @@ public:
 	void commit(){
 		cout << "Not programmed. " << endl;
 	}
-	static Instruction * __stdcall Create(int bit_inst) { return new BEQZ(bit_inst); }
+	static Instruction *  Create(int bit_inst) { return new BEQZ(bit_inst); }
 };
 
 class BNEZ : public Instruction {
@@ -307,7 +307,7 @@ public:
 	void commit(){
 		cout << "Not programmed. " << endl;
 	}
-	static Instruction * __stdcall Create(int bit_inst) { return new BNEZ(bit_inst); }
+	static Instruction *  Create(int bit_inst) { return new BNEZ(bit_inst); }
 };
 
 class BLTZ : public Instruction {
@@ -325,7 +325,7 @@ public:
 	void commit(){
 		cout << "Not programmed. " << endl;
 	}
-	static Instruction * __stdcall Create(int bit_inst) { return new BLTZ(bit_inst); }
+	static Instruction *  Create(int bit_inst) { return new BLTZ(bit_inst); }
 };
 
 class BGTZ : public Instruction {
@@ -343,7 +343,7 @@ public:
 	void commit(){
 		cout << "Not programmed. " << endl;
 	}
-	static Instruction * __stdcall Create(int bit_inst) { return new BGTZ(bit_inst); }
+	static Instruction *  Create(int bit_inst) { return new BGTZ(bit_inst); }
 };
 
 class BLEZ : public Instruction {
@@ -361,7 +361,7 @@ public:
 	void commit(){
 		cout << "Not programmed. " << endl;
 	}
-	static Instruction * __stdcall Create(int bit_inst) { return new BLEZ(bit_inst); }
+	static Instruction *  Create(int bit_inst) { return new BLEZ(bit_inst); }
 };
 
 class BGEZ : public Instruction {
@@ -379,7 +379,7 @@ public:
 	void commit(){
 		cout << "Not programmed. " << endl;
 	}
-	static Instruction * __stdcall Create(int bit_inst) { return new BGEZ(bit_inst); }
+	static Instruction *  Create(int bit_inst) { return new BGEZ(bit_inst); }
 };
 
 class JUMP : public Instruction {
@@ -397,7 +397,7 @@ public:
 	void commit(){
 		cout << "Not programmed. " << endl;
 	}
-	static Instruction * __stdcall Create(int bit_inst) { return new JUMP(bit_inst); }
+	static Instruction *  Create(int bit_inst) { return new JUMP(bit_inst); }
 };
 
 class EOP : public Instruction {
@@ -415,7 +415,7 @@ public:
 	void commit(){
 		cout << "Not programmed. " << endl;
 	}
-	static Instruction * __stdcall Create(int bit_inst) { return new EOP(bit_inst); }
+	static Instruction *  Create(int bit_inst) { return new EOP(bit_inst); }
 };
 
 class LWS : public Instruction {
@@ -433,7 +433,7 @@ public:
 	void commit(){
 		cout << "Not programmed. " << endl;
 	}
-	static Instruction * __stdcall Create(int bit_inst) { return new LWS(bit_inst); }
+	static Instruction *  Create(int bit_inst) { return new LWS(bit_inst); }
 };
 
 class SWS : public Instruction {
@@ -451,7 +451,7 @@ public:
 	void commit(){
 		cout << "Not programmed. " << endl;
 	}
-	static Instruction * __stdcall Create(int bit_inst) { return new SWS(bit_inst); }
+	static Instruction *  Create(int bit_inst) { return new SWS(bit_inst); }
 };
 
 class ADDS : public Instruction {
@@ -469,7 +469,7 @@ public:
 	void commit(){
 		cout << "Not programmed. " << endl;
 	}
-	static Instruction * __stdcall Create(int bit_inst) { return new ADDS(bit_inst); }
+	static Instruction *  Create(int bit_inst) { return new ADDS(bit_inst); }
 };
 
 class SUBS : public Instruction {
@@ -487,7 +487,7 @@ public:
 	void commit(){
 		cout << "Not programmed. " << endl;
 	}
-	static Instruction * __stdcall Create(int bit_inst) { return new SUBS(bit_inst); }
+	static Instruction *  Create(int bit_inst) { return new SUBS(bit_inst); }
 };
 
 class MULTS : public Instruction {
@@ -505,7 +505,7 @@ public:
 	void commit(){
 		cout << "Not programmed. " << endl;
 	}
-	static Instruction * __stdcall Create(int bit_inst) { return new MULTS(bit_inst); }
+	static Instruction *  Create(int bit_inst) { return new MULTS(bit_inst); }
 };
 
 class DIVS : public Instruction {
@@ -523,7 +523,7 @@ public:
 	void commit(){
 		cout << "Not programmed. " << endl;
 	}
-	static Instruction * __stdcall Create(int bit_inst) { return new DIVS(bit_inst); }
+	static Instruction *  Create(int bit_inst) { return new DIVS(bit_inst); }
 };
 
 

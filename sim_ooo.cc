@@ -11,37 +11,38 @@
 
 using namespace std;
 
+/* convert a float into an unsigned */
+inline unsigned float2unsigned(float value){
+	unsigned result;
+	memcpy(&result, &value, sizeof value);
+	return result;
+}
+
+/* convert an unsigned into a float */
+inline float unsigned2float(unsigned value){
+	float result;
+	memcpy(&result, &value, sizeof value);
+	return result;
+}
+
+/* convert integer into array of unsigned char - little indian */
+inline void unsigned2char(unsigned value, unsigned char *buffer){
+	buffer[0] = value & 0xFF;
+	buffer[1] = (value >> 8) & 0xFF;
+	buffer[2] = (value >> 16) & 0xFF;
+	buffer[3] = (value >> 24) & 0xFF;
+}
+
+/* convert array of char into integer - little indian */
+inline unsigned char2unsigned(unsigned char *buffer){
+	return buffer[0] + (buffer[1] << 8) + (buffer[2] << 16) + (buffer[3] << 24);
+}
+
 //used for debugging purposes
 static const char *stage_names[NUM_STAGES] = {"ISSUE", "EXE", "WR", "COMMIT"};
 static const char *instr_names[NUM_OPCODES] = {"LW", "SW", "ADD", "ADDI", "SUB", "SUBI", "XOR", "XORI", "OR", "ORI", "AND", "ANDI", "MULT", "DIV", "BEQZ", "BNEZ", "BLTZ", "BGTZ", "BLEZ", "BGEZ", "JUMP", "EOP", "LWS", "SWS", "ADDS", "SUBS", "MULTS", "DIVS"};
 static const char *res_station_names[5]={"Int", "Add", "Mult", "Load"};
 
-/* convert a float into an unsigned */
-inline unsigned float2unsigned(float value){
-        unsigned result;
-        memcpy(&result, &value, sizeof value);
-        return result;
-}
-
-/* convert an unsigned into a float */
-inline float unsigned2float(unsigned value){
-        float result;
-        memcpy(&result, &value, sizeof value);
-        return result;
-}
-
-/* convert integer into array of unsigned char - little indian */
-inline void unsigned2char(unsigned value, unsigned char *buffer){
-        buffer[0] = value & 0xFF;
-        buffer[1] = (value >> 8) & 0xFF;
-        buffer[2] = (value >> 16) & 0xFF;
-        buffer[3] = (value >> 24) & 0xFF;
-}
-
-/* convert array of char into integer - little indian */
-inline unsigned char2unsigned(unsigned char *buffer){
-       return buffer[0] + (buffer[1] << 8) + (buffer[2] << 16) + (buffer[3] << 24);
-}
 
 sim_ooo::sim_ooo(unsigned mem_size,
                 unsigned rob_size,
@@ -53,12 +54,17 @@ sim_ooo::sim_ooo(unsigned mem_size,
 	//memory
 	data_memory_size = mem_size;
 	data_memory = new unsigned char[data_memory_size];
-	
-	//fill here
+	fill_n(data_memory, data_memory_size, 0xFF);
 
-	//hadware instantiations
-	inst_memory = new InstructionMemory((unsigned)256);
-	inst_queue = new InstructionQueue(rob_size);//same size as ROB
+	//hardware 
+	pipeline = new Pipeline(mem_size,
+		rob_size,
+		num_int_res_stations,
+		num_add_res_stations,
+		num_mul_res_stations,
+		num_load_res_stations,
+		max_issue,
+		data_memory);
 
 }
 	
@@ -71,24 +77,13 @@ void sim_ooo::init_exec_unit(exe_unit_t exec_unit, unsigned latency, unsigned in
 
 void sim_ooo::load_program(const char *filename, unsigned base_address){
 	assembler as;
-	as.assemble(filename, inst_memory->get_mem_ptr());
-	pc.load(base_address);
-	inst_memory->print(0, 44);
+	as.assemble(filename,pipeline->inst_mem_base());
+	pipeline->initialize(base_address);
 }
 
 void sim_ooo::run(unsigned cycles){
-	//pipeline
-	Instruction * inst;
 	for (int i = 0; i < cycles; i++){
 	//fill instruction que
-		while (!inst_queue->isFull()){
-			inst = inst_memory->fetch(pc.get());
-			inst_queue->push(inst);
-			pc.pulse();
-		}
-		inst = inst_queue->pop();
-		cout << "Issued: ";
-		inst->print();
 	}
 }
 

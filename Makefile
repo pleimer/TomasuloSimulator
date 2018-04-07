@@ -4,7 +4,7 @@ WARN = -pedantic
 CFLAGS = $(OPT) $(WARN) 
 
 # List corresponding compiled object files here (.o files)
-SIM_OBJ = sim_ooo.o assem.o instructions.o hardware.o
+SIM_OBJ = sim_ooo.o assem.o instructions.o hardware.o pipeline.o
 
 TESTCASES = testcase1 testcase2 testcase3 testcase4 testcase5 
  

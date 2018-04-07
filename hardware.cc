@@ -4,6 +4,14 @@
 
 using namespace std;
 
+/* convert integer into array of unsigned char - little indian */
+inline void unsigned2char(unsigned value, unsigned char *buffer){
+	buffer[0] = value & 0xFF;
+	buffer[1] = (value >> 8) & 0xFF;
+	buffer[2] = (value >> 16) & 0xFF;
+	buffer[3] = (value >> 24) & 0xFF;
+}
+
 void ProgramCounter::pulse(){
 	addrPtr += 4; //one instruction
 }
@@ -69,4 +77,15 @@ Instruction * InstructionQueue::pop(){
 
 bool InstructionQueue::isFull(){
 	return (q.size() == maxSize);
+}
+
+MemoryUnit::MemoryUnit(unsigned char * data_memory, unsigned latency){
+	this->data_memory = data_memory;
+	this->latency = latency;
+	this->lock = false;
+}
+
+void MemoryUnit::write(unsigned data, unsigned addrPtr){
+	if (lock) throw HardwareException();
+	unsigned2char(data, data_memory + addrPtr);
 }

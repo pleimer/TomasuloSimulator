@@ -8,8 +8,14 @@
 
 class HardwareException : public std::exception{
 	const char * what() const throw(){
-		return "Unit currently busy";
+		return "Unit currently busy\n";
 	}
+};
+
+
+class Clock{
+	Clock();
+	void posedge();
 };
 
 class ProgramCounter {
@@ -19,6 +25,8 @@ public:
 	void load(unsigned addrPtr);
 	unsigned get();
 	void print();
+
+	void alert();
 };
 
 class InstructionMemory{
@@ -42,5 +50,21 @@ public:
 	Instruction * pop();
 	bool isFull();
 };
+
+class MemoryUnit{ //right now only implements functionailty for LD
+public:
+
+	MemoryUnit(unsigned char * data_memory, unsigned latency);
+	void write(unsigned data, unsigned addrPtr);
+
+private:
+	unsigned char * data_memory;
+	unsigned latency;
+	bool lock;
+
+	unsigned clock_cycle;
+};
+
+
 
 #endif

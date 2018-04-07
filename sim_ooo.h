@@ -5,7 +5,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <sstream>
-#include "hardware.h"
+#include "pipeline.h"
 
 
 #define UNDEFINED 0xFFFFFFFF //constant used for initialization
@@ -33,10 +33,7 @@ class sim_ooo{
 
 
 	//hardware implementations
-	ProgramCounter pc;
-	InstructionMemory * inst_memory;
-	InstructionQueue * inst_queue;
-	
+	Pipeline * pipeline;
 public:
 
 	/* Instantiates the simulator

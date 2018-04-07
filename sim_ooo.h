@@ -31,9 +31,9 @@ class sim_ooo{
 	//memory size in bytes
 	unsigned data_memory_size;
 
-
-	//hardware implementations
+	//pipeline implementations
 	Pipeline * pipeline;
+
 public:
 
 	/* Instantiates the simulator
@@ -55,7 +55,7 @@ public:
         // - exec_unit: type of execution unit to be added
         // - latency: latency of the execution unit (in clock cycles)
         // - instances: number of execution units of this type to be added
-        void init_exec_unit(exe_unit_t exec_unit, unsigned latency, unsigned instances=1);
+    void init_exec_unit(exe_unit_t exec_unit, unsigned latency, unsigned instances=1);
 
 	//loads the assembly program in file "filename" in instruction memory at the specified address
 	void load_program(const char *filename, unsigned base_address=0x0);
@@ -71,17 +71,17 @@ public:
 	*/
 	void reset();
 
-       //returns value of the specified integer general purpose register
-        int get_int_register(unsigned reg);
+    //returns value of the specified integer general purpose register
+    int get_int_register(unsigned reg);
 
-        //set the value of the given integer general purpose register to "value"
-        void set_int_register(unsigned reg, int value);
+    //set the value of the given integer general purpose register to "value"
+    void set_int_register(unsigned reg, int value);
 
-        //returns value of the specified floating point general purpose register
-        float get_fp_register(unsigned reg);
+    //returns value of the specified floating point general purpose register
+    float get_fp_register(unsigned reg);
 
-        //set the value of the given floating point general purpose register to "value"
-        void set_fp_register(unsigned reg, float value);
+    //set the value of the given floating point general purpose register to "value"
+    void set_fp_register(unsigned reg, float value);
 
 	// returns the index of the ROB entry that will write this integer register (UNDEFINED if the value of the register is not pending
 	unsigned get_pending_int_register(unsigned reg);

@@ -12,6 +12,21 @@ inline void unsigned2char(unsigned value, unsigned char *buffer){
 	buffer[3] = (value >> 24) & 0xFF;
 }
 
+Lock::Lock(){
+	this->lock_time = 0;
+	this->lock = false;
+}
+
+void Lock::alert(){
+	if (lock_time > 0) lock_time--;
+	if (lock_time == 0) lock = false;
+}
+
+bool Lock::isLocked(){
+	if (lock) throw HardwareException();
+	lock = true;
+	lock_time = latency;
+}
 
 
 void ProgramCounter::pulse(){
@@ -84,19 +99,14 @@ bool InstructionQueue::isFull(){
 MemoryUnit::MemoryUnit(unsigned char * data_memory, unsigned latency){
 	this->data_memory = data_memory;
 	this->latency = latency;
-	this->lock_time = 0;
-	this->lock = false;
 }
 
 void MemoryUnit::write(unsigned data, unsigned addrPtr){
-	if (lock) throw HardwareException();
-
+	isLocked();
 	unsigned2char(data, data_memory + addrPtr);
-	lock = true;
-	lock_time = latency;
 }
 
 void MemoryUnit::alert(){
-	if (lock_time > 0) lock_time--;
-	if (lock_time == 0) lock = false;
+	Lock::alert();
 }
+

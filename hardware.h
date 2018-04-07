@@ -12,6 +12,22 @@ class HardwareException : public std::exception{
 	}
 };
 
+class Lock{ //used for locking structures when they are in use
+protected:
+	unsigned latency;
+
+private:
+	unsigned lock_time;
+	bool lock;
+
+public:
+	Lock();
+	void alert();
+	bool isLocked();
+};
+
+
+
 class ProgramCounter {
 	unsigned addrPtr;
 public:
@@ -49,19 +65,34 @@ public:
 	void alert();
 };
 
-class MemoryUnit{ //right now only implements functionailty for LD
+class FPRegisterUnit{
+
+	class FPRegister{
+		unsigned register_number;
+		float data;
+		unsigned rob_dest;
+
+		FPRegister(unsigned register_number, float data, unsigned rob_dest);
+	};
+
+public:
+	FPRegisterUnit(unsigned num_registers);
+	float read(unsigned address);
+	void write(float data, unsigned address);
+
+private:
+	FPRegister * register_file;
+	
+};
+
+class MemoryUnit : Lock{ //right now only implements functionailty for LD
 	unsigned char * data_memory;
-	unsigned latency;
-	unsigned lock_time;
-	bool lock;
 
 public:
 
 	MemoryUnit(unsigned char * data_memory, unsigned latency);
 	void write(unsigned data, unsigned addrPtr);
-
 	void alert();
-
 };
 
 

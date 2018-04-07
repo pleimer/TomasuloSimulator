@@ -96,6 +96,39 @@ bool InstructionQueue::isFull(){
 	return (q.size() == maxSize);
 }
 
+
+FPRegisterUnit::FPRegisterUnit(unsigned num_registers){
+	for (unsigned int i = 0; i < 32; i++) register_file[i] = new FPRegister(i, UNDEFINED, UNDEFINED);
+}
+FPRegisterUnit::~FPRegisterUnit(){
+	register_file.clear();
+}
+
+FPRegisterUnit::FPRegister::FPRegister(unsigned register_number, float data, unsigned rob_dest){
+	this->register_number = register_number;
+	this->data = data;
+	this->rob_dest = rob_dest;
+}
+
+float FPRegisterUnit::read(unsigned address){
+	return register_file[address]->data;
+}
+
+void FPRegisterUnit::write(float data, unsigned address){
+	register_file[address]->data = data;
+}
+
+unsigned FPRegisterUnit::getDestination(unsigned address){
+	return register_file[address]->rob_dest;
+}
+
+void FPRegisterUnit::reset(){
+	for (int i = 0; i < 32; i++){
+		register_file[i]->data = UNDEFINED;
+		register_file[i]->rob_dest = UNDEFINED;
+	}
+}
+
 MemoryUnit::MemoryUnit(unsigned char * data_memory, unsigned latency){
 	this->data_memory = data_memory;
 	this->latency = latency;

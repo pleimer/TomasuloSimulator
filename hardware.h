@@ -3,7 +3,10 @@
 
 #include "instructions.h"
 #include <exception>
+#include <vector>
 #include <queue>
+
+#define UNDEFINED 0xFFFFFFFF
 
 
 class HardwareException : public std::exception{
@@ -68,6 +71,7 @@ public:
 class FPRegisterUnit{
 
 	class FPRegister{
+	public:
 		unsigned register_number;
 		float data;
 		unsigned rob_dest;
@@ -77,12 +81,14 @@ class FPRegisterUnit{
 
 public:
 	FPRegisterUnit(unsigned num_registers);
+	~FPRegisterUnit();
 	float read(unsigned address);
 	void write(float data, unsigned address);
+	unsigned getDestination(unsigned address);
+	void reset();
 
 private:
-	FPRegister * register_file;
-	
+	std::vector<FPRegister*> register_file;
 };
 
 class MemoryUnit : Lock{ //right now only implements functionailty for LD

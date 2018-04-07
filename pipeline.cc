@@ -8,13 +8,17 @@ Pipeline::Pipeline(unsigned mem_size,
 	unsigned num_add_res_stations,
 	unsigned num_mul_res_stations,
 	unsigned num_load_res_stations,
-	unsigned max_issue,
-	unsigned char *data_memory){
+	unsigned max_issue){
 
-	//hadware instantiations
+	//memory instantiations
 	inst_memory = new InstructionMemory((unsigned)256);
 	inst_queue = new InstructionQueue(rob_size);//same size as ROB
 
+}
+
+void Pipeline::Clock::posedge(Pipeline& pipeline){
+	//alert all hardware this is start of new cycle
+	pipeline.memory_unit->alert();
 }
 
 void Pipeline::initialize(unsigned base_address){
@@ -26,6 +30,7 @@ unsigned char * Pipeline::inst_mem_base(){
 }
 
 void Pipeline::cycle(){
+	clock.posedge(*this);
 	try{
 		while (true){
 			instruction = inst_memory->fetch(pc.get());

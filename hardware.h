@@ -12,12 +12,6 @@ class HardwareException : public std::exception{
 	}
 };
 
-
-class Clock{
-	Clock();
-	void posedge();
-};
-
 class ProgramCounter {
 	unsigned addrPtr;
 public:
@@ -38,6 +32,8 @@ public:
 	unsigned char * get_mem_ptr();
 	Instruction* fetch(unsigned addrPtr);
 	void print(unsigned start_address, unsigned end_address);
+
+	void alert();
 };
 
 class InstructionQueue {
@@ -49,20 +45,23 @@ public:
 	void push(Instruction* inst);
 	Instruction * pop();
 	bool isFull();
+
+	void alert();
 };
 
 class MemoryUnit{ //right now only implements functionailty for LD
+	unsigned char * data_memory;
+	unsigned latency;
+	unsigned lock_time;
+	bool lock;
+
 public:
 
 	MemoryUnit(unsigned char * data_memory, unsigned latency);
 	void write(unsigned data, unsigned addrPtr);
 
-private:
-	unsigned char * data_memory;
-	unsigned latency;
-	bool lock;
+	void alert();
 
-	unsigned clock_cycle;
 };
 
 

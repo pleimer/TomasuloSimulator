@@ -63,8 +63,7 @@ sim_ooo::sim_ooo(unsigned mem_size,
 		num_add_res_stations,
 		num_mul_res_stations,
 		num_load_res_stations,
-		max_issue,
-		data_memory);
+		max_issue);
 
 }
 	
@@ -73,6 +72,19 @@ sim_ooo::~sim_ooo(){
 }
 
 void sim_ooo::init_exec_unit(exe_unit_t exec_unit, unsigned latency, unsigned instances){
+	switch (exec_unit){
+	case INTEGER:
+		break;
+	case ADDER:
+		break;
+	case MULTIPLIER:
+		break;
+	case DIVIDER:
+		break;
+	case MEMORY: 
+		pipeline->memory_unit = new MemoryUnit(data_memory, latency);
+		break;
+	}
 }
 
 void sim_ooo::load_program(const char *filename, unsigned base_address){
@@ -83,7 +95,7 @@ void sim_ooo::load_program(const char *filename, unsigned base_address){
 
 void sim_ooo::run(unsigned cycles){
 	for (int i = 0; i < cycles; i++){
-	//fill instruction que
+		pipeline->cycle();
 	}
 }
 

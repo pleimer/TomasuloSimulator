@@ -6,12 +6,15 @@
 #include <vector>
 #include <queue>
 
-#define UNDEFINED 0xFFFFFFFF
-
-
 class HardwareException : public std::exception{
 	const char * what() const throw(){
 		return "Unit currently busy\n";
+	}
+};
+
+class InstException : public std::exception{
+	const char * what() const throw(){
+		return "Instruction not ready\n";
 	}
 };
 
@@ -68,23 +71,62 @@ public:
 	void alert();
 };
 
+//---------------------------------------------------------------------------
+class ReorderBuffer{
+	struct Entry {
+		unsigned entry;
+		bool busy;
+		bool ready;
+		unsigned pc;
+		stage_t stage;
+		unsigned dest;
+		
+		int value_i;
+		int value_f;
+
+		void clear();
+	};
+
+	struct FAD{
+		unsigned address;
+		float value;
+	};
+
+	struct RAD{
+		unsigned address;
+		int value;
+	};
+
+public:
+	ReorderBuffer(unsigned rob_size);
+	template <typename T>
+	T get(reg_t r);
+
+private:
+	std::vector<Entry*> entry_file;
+	void pushHead();
+	unsigned head;
+	unsigned rob_size;
+};
+
+//---------------------------------------------------------------------------
 class FPRegisterUnit{
 
-	class FPRegister{
-	public:
+	struct FPRegister{
 		unsigned register_number;
 		float data;
 		unsigned rob_dest;
-
-		FPRegister(unsigned register_number, float data, unsigned rob_dest);
 	};
 
 public:
 	FPRegisterUnit(unsigned num_registers);
 	~FPRegisterUnit();
+
 	float read(unsigned address);
 	void write(float data, unsigned address);
+	void clear(unsigned address);
 	unsigned getDestination(unsigned address);
+
 	void reset();
 
 private:

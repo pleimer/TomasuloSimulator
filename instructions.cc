@@ -18,7 +18,7 @@ Instruction::Instruction(int bit_inst){
 	this->bit_inst = bit_inst;
 	type = OPCODE(bit_inst);
 
-	immediate = IMM_UNUSED;
+	immediate = UNDEFINED;
 	RD = REG_EMPTY;
 	RS = REG_EMPTY;
 	RT = REG_EMPTY;

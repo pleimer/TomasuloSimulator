@@ -8,19 +8,6 @@
 #include "pipeline.h"
 
 
-#define UNDEFINED 0xFFFFFFFF //constant used for initialization
-#define NUM_GP_REGISTERS 32
-#define NUM_OPCODES 28
-#define NUM_STAGES 4
-
-
-
-typedef enum {INTEGER_RS, ADD_RS, MULT_RS, LOAD_B} res_station_t;
-
-typedef enum {INTEGER, ADDER, MULTIPLIER, DIVIDER, MEMORY} exe_unit_t;
-
-typedef enum{ISSUE, EXECUTE, WRITE_RESULT, COMMIT} stage_t;
-
 class sim_ooo{
 
 	/* Add the data members required by your simulator's implementation here */

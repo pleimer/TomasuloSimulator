@@ -8,11 +8,23 @@
 
 typedef enum { LW, SW, ADD, ADDI, SUB, SUBI, XOR, XORI, OR, ORI, AND, ANDI, MULT, DIV, BEQZ, BNEZ, BLTZ, BGTZ, BLEZ, BGEZ, JUMP, EOP, LWS, SWS, ADDS, SUBS, MULTS, DIVS } opcode_t;
 
+typedef enum { INTEGER_RS, ADD_RS, MULT_RS, LOAD_B } res_station_t;
+
+typedef enum { INTEGER, ADDER, MULTIPLIER, DIVIDER, MEMORY } exe_unit_t;
+
+typedef enum{ ISSUE, EXECUTE, WRITE_RESULT, COMMIT } stage_t;
+
+typedef enum{R, F} reg_t;
+
+#define UNDEFINED 0xFFFFFFFF //constant used for initialization
+#define NUM_GP_REGISTERS 32
+#define NUM_OPCODES 28
+#define NUM_STAGES 4
+
 #define INST_SIZE 32
 #define OP_SIZE 6
 #define REG_REF_SIZE 5
 #define REG_EMPTY -1
-#define IMM_UNUSED 0xFFFFF
 
 #define OPCODE(X) ((opcode_t)((X & 0xFC000000) >> (INST_SIZE-OP_SIZE)))
 

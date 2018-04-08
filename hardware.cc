@@ -96,18 +96,73 @@ bool InstructionQueue::isFull(){
 	return (q.size() == maxSize);
 }
 
+//------------------------------------------------------------------------------------------------------------------------------------------------
 
+ReorderBuffer::ReorderBuffer(unsigned rob_size){
+	this->rob_size = rob_size;
+	head = 0;
+	for (int i = 0; i < rob_size; i++){
+		entry_file[i] = new Entry;
+		entry_file[i]->clear();
+	}
+}
+
+void ReorderBuffer::Entry::clear(){
+	entry = UNDEFINED;
+	busy = false;
+	ready = false;
+	pc = UNDEFINED;
+	stage = (stage_t)UNDEFINED;
+	dest = UNDEFINED;
+
+	value_i = UNDEFINED;
+	value_f = UNDEFINED;
+}
+
+template <typename T>
+T ReorderBuffer::get(reg_t r){
+	if (!entry_file[head]->ready) throw InstException();
+
+	switch (r){
+	case R:{
+		RAD ret_vals;
+		ret_vals.value = entry_file[head]->value_i;
+		ret_vals.address = entry_file[head]->dest;
+		entry_file[head]->clear();
+		pushHead();
+		return &ret_vals;
+		break;
+	}
+	case F: {
+		FAD ret_vals;
+		ret_vals.value = entry_file[head]->value_f;
+		ret_vals.address = entry_file[head]->dest;
+		entry_file[head]->clear();
+		pushHead();
+		return &ret_vals;
+		break;
+	}
+	default:
+		break;
+	}
+}
+
+void ReorderBuffer::pushHead(){
+	head++;
+	if (head >= rob_size) head = 0;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------------
 FPRegisterUnit::FPRegisterUnit(unsigned num_registers){
-	for (unsigned int i = 0; i < 32; i++) register_file[i] = new FPRegister(i, UNDEFINED, UNDEFINED);
+	for (unsigned int i = 0; i < 32; i++){
+		register_file[i] = new FPRegister;
+		register_file[i]->register_number = i;
+		register_file[i]->data = UNDEFINED;
+		register_file[i]->rob_dest = UNDEFINED;
+	}
 }
 FPRegisterUnit::~FPRegisterUnit(){
 	register_file.clear();
-}
-
-FPRegisterUnit::FPRegister::FPRegister(unsigned register_number, float data, unsigned rob_dest){
-	this->register_number = register_number;
-	this->data = data;
-	this->rob_dest = rob_dest;
 }
 
 float FPRegisterUnit::read(unsigned address){
@@ -116,6 +171,11 @@ float FPRegisterUnit::read(unsigned address){
 
 void FPRegisterUnit::write(float data, unsigned address){
 	register_file[address]->data = data;
+}
+
+void FPRegisterUnit::clear(unsigned address){
+	register_file[address]->data = UNDEFINED;
+	register_file[address]->rob_dest = UNDEFINED;
 }
 
 unsigned FPRegisterUnit::getDestination(unsigned address){

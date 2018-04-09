@@ -99,6 +99,7 @@ void sim_ooo::load_program(const char *filename, unsigned base_address){
 void sim_ooo::run(unsigned cycles){
 	for (int i = 0; i < cycles; i++){
 		pipeline->cycle();
+		controller->execute();
 	}
 }
 

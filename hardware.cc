@@ -1,5 +1,6 @@
 #include "hardware.h"
 #include <iomanip>
+#include <sstream>
 
 
 using namespace std;
@@ -52,15 +53,17 @@ void ProgramCounter::print(){
 ReorderBuffer::ReorderBuffer(unsigned rob_size){
 	this->rob_size = rob_size;
 	head = 0;
-	for (int i = 0; i < rob_size; i++){
-		entry_file[i] = new Entry;
-		entry_file[i]->entry = (unsigned) i;
+	for (unsigned i = 0; i < rob_size; i++){
+		entry_file.push_back(new Entry);
+		entry_file[i]->entry = i;
 		entry_file[i]->clear();
 	}
+	
 }
 
 void ReorderBuffer::push(unsigned pc, reg_t data_type, unsigned dest){
 	if (isFull()) throw HardwareException();
+
 
 	//find first empty slot after last instruction
 	//if entry file is empty, put at first location
@@ -80,6 +83,8 @@ void ReorderBuffer::push(unsigned pc, reg_t data_type, unsigned dest){
 		entry_file[0]->pc = pc;
 		entry_file[0]->data_type = data_type;
 		entry_file[0]->dest = dest;
+		entry_file[0]->busy = true;
+		cout << "Installing on location 0. " << endl;
 	}
 	else {
 		//find empty location after last instruction entered, put data there
@@ -88,9 +93,11 @@ void ReorderBuffer::push(unsigned pc, reg_t data_type, unsigned dest){
 			inst_index++;
 			if (inst_index >= rob_size) inst_index = 0;
 		}
+		cout << "Installing on location " << inst_index << endl;
 		entry_file[inst_index]->pc = pc;
 		entry_file[inst_index]->data_type = data_type;
 		entry_file[inst_index]->dest = dest;
+		entry_file[inst_index]->busy = true;
 	}
 }
 
@@ -167,31 +174,62 @@ void ReorderBuffer::pushHead(){
 }
 
 void ReorderBuffer::print(){
-	string busy, ready, state;
-#define PROCESS_VAL(p) #p
-	for (int i = 0; i < rob_size; i++){
+	string busy, ready, pc, stage, dest, value, reg;
+	stringstream ss;
+
+	for (int i = 0; i < entry_file.size();i++){
+		reg = " ";
+
 		if (entry_file[i]->busy) busy = "yes";
 		else busy = "no";
 
 		if (entry_file[i]->ready) ready = "yes";
 		else ready = "no";
 
-		state = PROCESS_VAL(entry_file[i]->state);
+		if (entry_file[i]->pc == UNDEFINED) pc = "-";
+		else {
+			ss.str("");
+			ss.clear();
+			ss << entry_file[i]->pc;
+			pc = ss.str();
+		}	
+
+		//if (entry_file[i]->stage == UNDEFINED) stage = "-";
+		stage = "-";
+
+		if (entry_file[i]->dest == UNDEFINED) dest = "-";
+		else {
+			ss.str(""); //don't forget to clear the string stream!!!
+			ss.clear();
+			ss << entry_file[i]->dest;
+			dest = ss.str();
+		}
 
 		switch (entry_file[i]->data_type){
 		case R:
-			cout << setfill(' ') << setw(5) << i << setw(6) << busy << setw(7) << ready
-				<< setw(12) << hex << entry_file[i]->pc << setw(10) << state << setw(6)
-				<< dec << "R" << entry_file[i]->dest << setw(12) << hex << entry_file[i]->value_i << endl;
+			if (entry_file[i]->value_i == UNDEFINED) value = "-";
+			else {
+				ss << entry_file[i]->value_i;
+				value = ss.str();
+			}
+			reg = "R";
+
 			break;
 		case F:
-			cout << setfill(' ') << setw(5) << i << setw(6) << busy << setw(7) << ready
-				<< setw(12) << hex << entry_file[i]->pc << setw(10) << state << setw(6)
-				<< dec << "F" << entry_file[i]->dest << setw(12) << hex << entry_file[i]->value_i << endl;
+			if (entry_file[i]->value_f == UNDEFINED) value = "-";
+			else {
+				ss << entry_file[i]->value_f;
+				value = ss.str();
+			}
+			reg = "F";
 			break;
 		default:
 			break;
 		}
+
+		cout << setfill(' ') << setw(5) << entry_file[i]->entry << setw(6) << busy << setw(7) << ready
+			<< setw(12) << "0x" << setfill('0') << hex << pc << setfill(' ') << setw(10)
+			<< stage << setw(6) << reg << dest << setw(12) << hex << value << endl;
 	}
 
 }

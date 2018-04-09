@@ -24,11 +24,7 @@ public:
 
 	void cycle();
 
-private:
-	//Instruction * instruction;
-
-	
-	//std::vector<Instruction *> pipeline;
+	ReorderBuffer * ROB;
 
 };
 

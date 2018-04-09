@@ -10,14 +10,19 @@
 using namespace std;
 
 #define IMM_MASK 0x0000FFFF
-#define R1(X) (X << (INST_SIZE - OP_SIZE - REG_REF_SIZE))
-#define R2(X) (X << (INST_SIZE - OP_SIZE - REG_REF_SIZE*2))
-#define R3(X) (X << (INST_SIZE - OP_SIZE - REG_REF_SIZE*3))
+#define R1_MASK 0x03E00000
+#define R2_MASK 0x001F0000
+#define R3_MASK 0x0000F800
+
+#define R1(X) 	((X & R1_MASK) >> (INST_SIZE - OP_SIZE - REG_REF_SIZE * 1)) 
+#define R2(X) 	((X & R2_MASK) >> (INST_SIZE - OP_SIZE - REG_REF_SIZE * 2))
+#define R3(X) 	((X & R3_MASK) >> (INST_SIZE - OP_SIZE - REG_REF_SIZE * 3))
 
 Instruction::Instruction(int bit_inst, Pipeline * pl){
 
 	this->pl = pl;
 	this->bit_inst = bit_inst;
+	this->pc_init = pl->pc.get();
 	type = OPCODE(bit_inst);
 
 	immediate = UNDEFINED;
@@ -48,7 +53,7 @@ public:
 		RS = R2(bit_inst);
 	}
 	void issue(){
-		
+		pl->ROB->push(pc_init, R, RD);
 	}
 	void execute(){
 		cout << "Not programmed. " << endl;
@@ -71,7 +76,7 @@ public:
 		RT = R1(bit_inst);
 	}
 	void issue(){
-		cout << "Not programmed. " << endl;
+		pl->ROB->push(pc_init, R, RS);
 	}
 	void execute(){
 		cout << "Not programmed. " << endl;
@@ -94,7 +99,7 @@ public:
 		RT = R3(bit_inst);
 	}
 	void issue(){
-		cout << "Not programmed. " << endl;
+		pl->ROB->push(pc_init, R, RD);
 	}
 	void execute(){
 		cout << "Not programmed. " << endl;
@@ -117,7 +122,7 @@ public:
 		immediate = IMM_MASK & bit_inst;
 	}
 	void issue(){
-		cout << "Not programmed. " << endl;
+		pl->ROB->push(pc_init, R, RD);
 	}
 	void execute(){
 		cout << "Not programmed. " << endl;
@@ -140,7 +145,7 @@ public:
 		RT = R3(bit_inst);
 	}
 	void issue(){
-		cout << "Not programmed. " << endl;
+		pl->ROB->push(pc_init, R, RD);
 	}
 	void execute(){
 		cout << "Not programmed. " << endl;
@@ -163,7 +168,7 @@ public:
 		immediate = IMM_MASK & bit_inst;
 	}
 	void issue(){
-		cout << "Not programmed. " << endl;
+		pl->ROB->push(pc_init, R, RD);
 	}
 	void execute(){
 		cout << "Not programmed. " << endl;
@@ -186,7 +191,7 @@ public:
 		RT = R3(bit_inst);
 	}
 	void issue(){
-		cout << "Not programmed. " << endl;
+		pl->ROB->push(pc_init, R, RD);
 	}
 	void execute(){
 		cout << "Not programmed. " << endl;
@@ -209,7 +214,7 @@ public:
 		immediate = IMM_MASK & bit_inst;
 	}
 	void issue(){
-		cout << "Not programmed. " << endl;
+		pl->ROB->push(pc_init, R, RD);
 	}
 	void execute(){
 		cout << "Not programmed. " << endl;
@@ -232,7 +237,7 @@ public:
 		RT = R3(bit_inst);
 	}
 	void issue(){
-		cout << "Not programmed. " << endl;
+		pl->ROB->push(pc_init, R, RD);
 	}
 	void execute(){
 		cout << "Not programmed. " << endl;
@@ -255,7 +260,7 @@ public:
 		immediate = IMM_MASK & bit_inst;
 	}
 	void issue(){
-		cout << "Not programmed. " << endl;
+		pl->ROB->push(pc_init, R, RD);
 	}
 	void execute(){
 		cout << "Not programmed. " << endl;
@@ -278,7 +283,7 @@ public:
 		RT = R3(bit_inst);
 	}
 	void issue(){
-		cout << "Not programmed. " << endl;
+		pl->ROB->push(pc_init, R, RD);
 	}
 	void execute(){
 		cout << "Not programmed. " << endl;
@@ -301,7 +306,7 @@ public:
 		immediate = IMM_MASK & bit_inst;
 	}
 	void issue(){
-		cout << "Not programmed. " << endl;
+		pl->ROB->push(pc_init, R, RD);
 	}
 	void execute(){
 		cout << "Not programmed. " << endl;
@@ -324,7 +329,7 @@ public:
 		RT = R3(bit_inst);
 	}
 	void issue(){
-		cout << "Not programmed. " << endl;
+		pl->ROB->push(pc_init, R, RD);
 	}
 	void execute(){
 		cout << "Not programmed. " << endl;
@@ -347,7 +352,7 @@ public:
 		RT = R3(bit_inst);
 	}
 	void issue(){
-		cout << "Not programmed. " << endl;
+		pl->ROB->push(pc_init, R, RD);
 	}
 	void execute(){
 		cout << "Not programmed. " << endl;
@@ -369,7 +374,7 @@ public:
 		immediate = bit_inst & IMM_MASK;
 	}
 	void issue(){
-		cout << "Not programmed. " << endl;
+		pl->ROB->push(pc_init, R, RS);
 	}
 	void execute(){
 		cout << "Not programmed. " << endl;
@@ -391,7 +396,7 @@ public:
 		immediate = bit_inst & IMM_MASK;
 	}
 	void issue(){
-		cout << "Not programmed. " << endl;
+		pl->ROB->push(pc_init, R, RS);
 	}
 	void execute(){
 		cout << "Not programmed. " << endl;
@@ -413,7 +418,7 @@ public:
 		immediate = bit_inst & IMM_MASK;
 	}
 	void issue(){
-		cout << "Not programmed. " << endl;
+		pl->ROB->push(pc_init, R, RS);
 	}
 	void execute(){
 		cout << "Not programmed. " << endl;
@@ -435,7 +440,7 @@ public:
 		immediate = bit_inst & IMM_MASK;
 	}
 	void issue(){
-		cout << "Not programmed. " << endl;
+		pl->ROB->push(pc_init, R, RS);
 	}
 	void execute(){
 		cout << "Not programmed. " << endl;
@@ -457,7 +462,7 @@ public:
 		immediate = bit_inst & IMM_MASK;
 	}
 	void issue(){
-		cout << "Not programmed. " << endl;
+		pl->ROB->push(pc_init, R, RS);
 	}
 	void execute(){
 		cout << "Not programmed. " << endl;
@@ -479,7 +484,7 @@ public:
 		immediate = bit_inst & IMM_MASK;
 	}
 	void issue(){
-		cout << "Not programmed. " << endl;
+		pl->ROB->push(pc_init, R, RS);
 	}
 	void execute(){
 		cout << "Not programmed. " << endl;
@@ -500,7 +505,7 @@ public:
 		immediate = bit_inst & IMM_MASK;
 	}
 	void issue(){
-		cout << "Not programmed. " << endl;
+		return;
 	}
 	void execute(){
 		cout << "Not programmed. " << endl;
@@ -520,7 +525,7 @@ public:
 		type = "EOP";
 	}
 	void issue(){
-		cout << "Not programmed. " << endl;
+		return;
 	}
 	void execute(){
 		cout << "Not programmed. " << endl;
@@ -542,7 +547,7 @@ public:
 		RS = R2(bit_inst);
 	}
 	void issue(){
-		cout << "Not programmed. " << endl;
+		pl->ROB->push(pc_init, F, RD);
 	}
 	void execute(){
 		cout << "Not programmed. " << endl;
@@ -564,7 +569,7 @@ public:
 		RS = R2(bit_inst);
 	}
 	void issue(){
-		cout << "Not programmed. " << endl;
+		pl->ROB->push(pc_init, F, RT);
 	}
 	void execute(){
 		cout << "Not programmed. " << endl;
@@ -587,7 +592,7 @@ public:
 		RT = R3(bit_inst);
 	}
 	void issue(){
-		cout << "Not programmed. " << endl;
+		pl->ROB->push(pc_init, F, RD);
 	}
 	void execute(){
 		cout << "Not programmed. " << endl;
@@ -610,7 +615,7 @@ public:
 		RT = R3(bit_inst);
 	}
 	void issue(){
-		cout << "Not programmed. " << endl;
+		pl->ROB->push(pc_init, F, RD);
 	}
 	void execute(){
 		cout << "Not programmed. " << endl;
@@ -633,7 +638,7 @@ public:
 		RT = R3(bit_inst);
 	}
 	void issue(){
-		cout << "Not programmed. " << endl;
+		pl->ROB->push(pc_init, F, RD);
 	}
 	void execute(){
 		cout << "Not programmed. " << endl;
@@ -656,7 +661,7 @@ public:
 		RT = R3(bit_inst);
 	}
 	void issue(){
-		cout << "Not programmed. " << endl;
+		pl->ROB->push(pc_init, F, RD);
 	}
 	void execute(){
 		cout << "Not programmed. " << endl;

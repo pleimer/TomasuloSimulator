@@ -5,6 +5,7 @@ using namespace std;
 
 InstructionMemory::InstructionMemory(unsigned size){
 	inst_memory = new unsigned char[size];
+	fill_n(inst_memory, size, 0xFF);
 }
 
 unsigned char * InstructionMemory::get_mem_ptr(){
@@ -48,6 +49,7 @@ void InstructionQueue::push(Instruction * inst){
 Instruction * InstructionQueue::pop(){
 	Instruction *i = q.front();
 	q.pop();
+
 	return i;
 }
 
@@ -60,6 +62,31 @@ Controller::Controller(unsigned inst_queue_size, Pipeline * pl) {
 	this->pl = pl;
 	inst_memory = new InstructionMemory((unsigned)256);
 	inst_queue = new InstructionQueue(inst_queue_size);//same size as ROB
+}
+
+void Controller::execute(){
+	Instruction * instruction;
+	try{
+		while (true){ //fill inst queue whenever it starts to empty
+			instruction = inst_memory->fetch(pl->pc.get(), pl);
+			inst_queue->push(instruction);
+			pl->pc.pulse();
+		}
+	}
+	catch (exception &e){
+		cerr << e.what();
+	}
+
+	try{
+		instruction = inst_queue->pop();
+		instruction->issue();
+		cout << "Issued: ";
+		instruction->print();
+		pl->ROB->print();
+	}
+	catch (exception &e){
+		cerr << e.what();
+	}
 }
 
 unsigned char * Controller::inst_mem_base(){

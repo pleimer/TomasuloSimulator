@@ -23,6 +23,7 @@ protected:
 
 	int bit_inst;
 	Pipeline * pl;
+	unsigned pc_init;
 
 	int immediate;
 	unsigned int RD;

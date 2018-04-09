@@ -33,11 +33,13 @@ public:
 
 class Controller {
 	Pipeline * pl;
-	InstructionMemory * inst_memory;
+	
 	InstructionQueue * inst_queue;
 
 public:
+	InstructionMemory * inst_memory;
 	Controller(unsigned inst_queue_size, Pipeline * pl);
+	void execute();
 	unsigned char * inst_mem_base();
 };
 

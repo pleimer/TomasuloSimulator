@@ -62,6 +62,19 @@ public:
 	void alert();
 };
 
+class AddressUnit{ //no structural hazard on this, but will need to account for RAW in control logic
+
+public:
+	//for EMA calc, should wait until value exists at that register location, maybe this could be done by control unit
+	// This would account for RAW
+
+	unsigned calc_EMA(int imm, int reg_val);
+
+	//for getting immediate, just returns the immmediate value of the most recent instruction issued
+};
+
+
+
 class ReorderBuffer{
 	struct Entry {
 		reg_t data_type;
@@ -108,6 +121,7 @@ private:
 };
 
 
+
 class FPRegisterUnit{
 
 	struct FPRegister{
@@ -129,6 +143,30 @@ public:
 
 private:
 	std::vector<FPRegister*> register_file;
+};
+
+
+class IntRegisterUnit{
+
+	struct IntRegister{
+		unsigned register_number;
+		int data;
+		unsigned rob_dest;
+	};
+
+public:
+	IntRegisterUnit(unsigned num_registers);
+	~IntRegisterUnit();
+
+	int read(unsigned address);
+	void write(int data, unsigned address);
+	void clear(unsigned address);
+	unsigned getDestination(unsigned address);
+
+	void reset();
+
+private:
+	std::vector<IntRegister*> register_file;
 };
 
 

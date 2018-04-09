@@ -57,17 +57,16 @@ sim_ooo::sim_ooo(unsigned mem_size,
 	data_memory = new unsigned char[data_memory_size];
 	fill_n(data_memory, data_memory_size, 0xFF);
 
-	//hardware 
+	
 	pipeline = new Pipeline(mem_size,
-		rob_size,
-		num_int_res_stations,
-		num_add_res_stations,
-		num_mul_res_stations,
-		num_load_res_stations,
-		max_issue);
+							rob_size,
+							num_int_res_stations,
+							num_add_res_stations,
+							num_mul_res_stations,
+							num_load_res_stations,
+							max_issue);
 
 	controller = new Controller(rob_size, pipeline);
-
 }
 	
 sim_ooo::~sim_ooo(){
@@ -77,12 +76,16 @@ sim_ooo::~sim_ooo(){
 void sim_ooo::init_exec_unit(exe_unit_t exec_unit, unsigned latency, unsigned instances){
 	switch (exec_unit){
 	case INTEGER:
+		pipeline->int_file = new IntegerFile(latency, instances);
 		break;
 	case ADDER:
+		pipeline->adder_file = new AdderFile(latency, instances);
 		break;
 	case MULTIPLIER:
+		pipeline->mult_file = new MultiplierFile(latency, instances);
 		break;
 	case DIVIDER:
+		pipeline->div_file = new DividerFile(latency, instances);
 		break;
 	case MEMORY: 
 		pipeline->memory_unit = new MemoryUnit(data_memory, latency);
@@ -115,10 +118,11 @@ void sim_ooo::set_int_register(unsigned reg, int value){
 }
 
 float sim_ooo::get_fp_register(unsigned reg){
-	return UNDEFINED; //fill here
+	return pipeline->fpregisters->read(reg); //fill here
 }
 
 void sim_ooo::set_fp_register(unsigned reg, float value){
+	pipeline->fpregisters->write(value, reg);
 }
 
 unsigned sim_ooo::get_pending_int_register(unsigned reg){
@@ -126,7 +130,7 @@ unsigned sim_ooo::get_pending_int_register(unsigned reg){
 }
 
 unsigned sim_ooo::get_pending_fp_register(unsigned reg){
-	return UNDEFINED; //fill here
+	return  pipeline->fpregisters->getDestination(reg);//fill here
 }
 
 void sim_ooo::print_status(){
@@ -147,7 +151,8 @@ void sim_ooo::print_memory(unsigned start_address, unsigned end_address){
 	} 
 }
 
-void sim_ooo::write_memory(unsigned address, unsigned value){
+void sim_ooo::write_memory(unsigned address, unsigned value){//write data memory
+	//pipeline->memory_unit->write(address, value);
 	unsigned2char(value,data_memory+address);
 }
 

@@ -12,7 +12,7 @@ public:
 	~InstructionMemory();
 
 	unsigned char * get_mem_ptr();
-	Instruction* fetch(unsigned addrPtr, Pipeline * pl);
+	Instruction* fetch(unsigned addrPtr, Pipeline * pl); //pl because instructions need it
 	void print(unsigned start_address, unsigned end_address);
 
 	void alert();

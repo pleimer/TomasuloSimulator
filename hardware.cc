@@ -57,6 +57,11 @@ void ProgramCounter::print(){
 }
 
 
+unsigned AddressUnit::calc_EMA(int imm, int reg_val){
+
+	return imm + reg_val;
+}
+
 
 ReorderBuffer::ReorderBuffer(unsigned rob_size){
 	this->rob_size = rob_size;
@@ -244,8 +249,8 @@ void ReorderBuffer::print(){
 
 
 FPRegisterUnit::FPRegisterUnit(unsigned num_registers){
-	for (unsigned int i = 0; i < 32; i++){
-		register_file[i] = new FPRegister;
+	for (unsigned int i = 0; i < num_registers; i++){
+		register_file.push_back(new FPRegister);
 		register_file[i]->register_number = i;
 		register_file[i]->data = UNDEFINED;
 		register_file[i]->rob_dest = UNDEFINED;
@@ -279,6 +284,47 @@ void FPRegisterUnit::reset(){
 	}
 }
 
+/*----------------------------------------Int Register Unit ---------------------------------------------*/
+IntRegisterUnit::IntRegisterUnit(unsigned num_registers){
+	for (unsigned int i = 0; i < num_registers; i++){
+		register_file.push_back(new IntRegister);
+		register_file[i]->register_number = i;
+		register_file[i]->data = UNDEFINED;
+		register_file[i]->rob_dest = UNDEFINED;
+	}
+}
+IntRegisterUnit::~IntRegisterUnit(){
+	register_file.clear();
+}
+
+int IntRegisterUnit::read(unsigned address){
+	return register_file[address]->data;
+}
+
+void IntRegisterUnit::write(int data, unsigned address){
+	register_file[address]->data = data;
+}
+
+void IntRegisterUnit::clear(unsigned address){
+	register_file[address]->data = UNDEFINED;
+	register_file[address]->rob_dest = UNDEFINED;
+}
+
+unsigned IntRegisterUnit::getDestination(unsigned address){
+	return register_file[address]->rob_dest;
+}
+
+void IntRegisterUnit::reset(){
+	for (int i = 0; i < 32; i++){
+		register_file[i]->data = UNDEFINED;
+		register_file[i]->rob_dest = UNDEFINED;
+	}
+}
+
+
+
+
+
 MemoryUnit::MemoryUnit(unsigned char * data_memory, unsigned latency){
 	this->data_memory = data_memory;
 	this->latency = latency;
@@ -286,7 +332,7 @@ MemoryUnit::MemoryUnit(unsigned char * data_memory, unsigned latency){
 
 void MemoryUnit::write(unsigned data, unsigned addrPtr){
 	isLocked();
-	unsigned2char(data, data_memory + addrPtr);
+	unsigned2char(data, data_memory + addrPtr); //already implemented
 }
 
 
@@ -380,7 +426,7 @@ void IntegerFile::assign(int op1, int op2, integer_t op_type, unsigned dest){
 			nonAvailable = false;
 		}
 		catch (exception &e){
-			cerr << e.what();
+			cerr << "Integer " << e.what();
 		}
 	}
 	if (nonAvailable) throw HardwareException();
@@ -438,7 +484,7 @@ void AdderFile::assign(int op1, int op2, unsigned dest){
 			nonAvailable = false;
 		}
 		catch (exception &e){
-			cerr << e.what();
+			cerr << "Adder " << e.what();
 		}
 	}
 	if (nonAvailable) throw HardwareException();
@@ -488,7 +534,7 @@ void MultiplierFile::assign(int op1, int op2, unsigned dest){
 			nonAvailable = false;
 		}
 		catch (exception &e){
-			cerr << e.what();
+			cerr << "Multiplier "<< e.what();
 		}
 	}
 	if (nonAvailable) throw HardwareException();
@@ -538,7 +584,7 @@ void DividerFile::assign(int op1, int op2, unsigned dest){
 			nonAvailable = false;
 		}
 		catch (exception &e){
-			cerr << e.what();
+			cerr << "Divider " << e.what();
 		}
 	}
 	if (nonAvailable) throw HardwareException();

@@ -10,6 +10,9 @@ TO DO: instruction queue made need to throw an exception when empyt for the pipe
 
  figure out how to pop instruction from running_inst<> after it is done commiting
 
+ ISSUES that could arise: Pipeline control has not been exhaustively tested because operation
+ depends on finished functionality of each instruction - this needs to be fully tested later on
+
 */
 
 InstructionMemory::InstructionMemory(unsigned size){
@@ -82,9 +85,7 @@ void Controller::execute(){
 			pl->pc.pulse();
 		}
 	}
-	catch (exception &e){
-		cerr << e.what();
-	}
+	catch (exception &e){}
 
 	try{
 		instruction = inst_queue->pop();
@@ -99,6 +100,7 @@ void Controller::execute(){
 				running_inst.erase(running_inst.begin() + i);
 			}
 		}
+
 	}
 	catch (exception &e){
 		cerr << e.what();

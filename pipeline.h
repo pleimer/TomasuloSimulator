@@ -12,6 +12,7 @@ public:
 	ProgramCounter pc;
 	MemoryUnit * memory_unit;
 
+
 	Pipeline(unsigned mem_size,
 		unsigned rob_size,
 		unsigned num_int_res_stations,

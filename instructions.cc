@@ -4,6 +4,9 @@
 	ECE 463 Project 2 - Dynamically controlled processor
 	
 	instructions.h announces all instructions that will exist in the simulation
+
+
+	NOW: trying to see what instruction functionality I can implement in Instruction parent
 */
 #include "instructions.h"
 
@@ -24,6 +27,7 @@ Instruction::Instruction(int bit_inst, Pipeline * pl){
 	this->bit_inst = bit_inst;
 	this->pc_init = pl->pc.get();
 	this->stage = ISSUE;
+	this->data_type = (reg_t)UNDEFINED;
 	type = OPCODE(bit_inst);
 	
 
@@ -79,6 +83,28 @@ void Instruction::assess(){
 	}
 }
 
+void Instruction::issue(){
+	pl->ROB->push(pc_init, data_type, RD);
+	//check and debug code:
+	cout << "ISSUE" << endl;
+	//send to reservation stations too
+}
+
+void Instruction::execute(){
+	cout << "EXECUTE " << endl;
+	return;
+}
+
+void Instruction::write_result(){
+	cout << "WRITE_RESULT" << endl;
+	return;
+}
+
+void Instruction::commit(){
+	cout << "COMMIT" << endl;
+	return;
+}
+
 void Instruction::print(){
 	cout << type << endl;
 }
@@ -96,22 +122,11 @@ class LW : public Instruction {
 public:
 	LW(int bit_inst, Pipeline *pl) : Instruction(bit_inst, pl){
 		type = "LW";
-
+		data_type = R;
 		RD = R1(bit_inst);
 		RS = R2(bit_inst);
 	}
-	void issue(){
-		pl->ROB->push(pc_init, R, RD);
-	}
-	void execute(){
-		cout << "Not programmed. " << endl;
-	}
-	void write_result(){
-		cout << "Not programmed. " << endl;
-	}
-	void commit(){
-		cout << "Not programmed. " << endl;
-	}
+
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new LW(bit_ins, pl); }
 };
 
@@ -119,22 +134,11 @@ class SW : public Instruction {
 public:
 	SW(int bit_inst, Pipeline *pl) : Instruction(bit_inst, pl){
 		type = "SW";
-
+		data_type = R;
 		RS = R2(bit_inst);
 		RT = R1(bit_inst);
 	}
-	void issue(){
-		pl->ROB->push(pc_init, R, RS);
-	}
-	void execute(){
-		cout << "Not programmed. " << endl;
-	}
-	void write_result(){
-		cout << "Not programmed. " << endl;
-	}
-	void commit(){
-		cout << "Not programmed. " << endl;
-	}
+	
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new SW(bit_ins, pl); }
 };
 
@@ -142,22 +146,12 @@ class ADD : public Instruction {
 public:
 	ADD(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
 		type = "ADD";
+		data_type = R;
 		RD = R1(bit_inst);
 		RS = R2(bit_inst);
 		RT = R3(bit_inst);
 	}
-	void issue(){
-		pl->ROB->push(pc_init, R, RD);
-	}
-	void execute(){
-		cout << "Not programmed. " << endl;
-	}
-	void write_result(){
-		cout << "Not programmed. " << endl;
-	}
-	void commit(){
-		cout << "Not programmed. " << endl;
-	}
+	
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new ADD(bit_ins, pl); }
 };
 
@@ -165,22 +159,12 @@ class ADDI : public Instruction {
 public:
 	ADDI(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
 		type = "ADDI";
+		data_type = R;
 		RD = R1(bit_inst);
 		RS = R2(bit_inst);
 		immediate = IMM_MASK & bit_inst;
 	}
-	void issue(){
-		pl->ROB->push(pc_init, R, RD);
-	}
-	void execute(){
-		cout << "Not programmed. " << endl;
-	}
-	void write_result(){
-		cout << "Not programmed. " << endl;
-	}
-	void commit(){
-		cout << "Not programmed. " << endl;
-	}
+	
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new ADDI(bit_ins, pl); }
 };
 
@@ -188,22 +172,12 @@ class SUB : public Instruction {
 public:
 	SUB(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
 		type = "SUB";
+		data_type = R;
 		RD = R1(bit_inst);
 		RS = R2(bit_inst);
 		RT = R3(bit_inst);
 	}
-	void issue(){
-		pl->ROB->push(pc_init, R, RD);
-	}
-	void execute(){
-		cout << "Not programmed. " << endl;
-	}
-	void write_result(){
-		cout << "Not programmed. " << endl;
-	}
-	void commit(){
-		cout << "Not programmed. " << endl;
-	}
+	
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new SUB(bit_ins, pl); }
 };
 
@@ -211,22 +185,12 @@ class SUBI : public Instruction {
 public:
 	SUBI(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
 		type = "SUBI";
+		data_type = R;
 		RD = R1(bit_inst);
 		RS = R2(bit_inst);
 		immediate = IMM_MASK & bit_inst;
 	}
-	void issue(){
-		pl->ROB->push(pc_init, R, RD);
-	}
-	void execute(){
-		cout << "Not programmed. " << endl;
-	}
-	void write_result(){
-		cout << "Not programmed. " << endl;
-	}
-	void commit(){
-		cout << "Not programmed. " << endl;
-	}
+	
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new SUBI(bit_ins, pl); }
 };
 
@@ -234,22 +198,12 @@ class XOR : public Instruction {
 public:
 	XOR(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
 		type = "XOR";
+		data_type = R;
 		RD = R1(bit_inst);
 		RS = R2(bit_inst);
 		RT = R3(bit_inst);
 	}
-	void issue(){
-		pl->ROB->push(pc_init, R, RD);
-	}
-	void execute(){
-		cout << "Not programmed. " << endl;
-	}
-	void write_result(){
-		cout << "Not programmed. " << endl;
-	}
-	void commit(){
-		cout << "Not programmed. " << endl;
-	}
+	
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new XOR(bit_ins, pl); }
 };
 
@@ -257,22 +211,12 @@ class XORI : public Instruction {
 public:
 	XORI(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
 		type = "XORI";
+		data_type = R;
 		RD = R1(bit_inst);
 		RS = R2(bit_inst);
 		immediate = IMM_MASK & bit_inst;
 	}
-	void issue(){
-		pl->ROB->push(pc_init, R, RD);
-	}
-	void execute(){
-		cout << "Not programmed. " << endl;
-	}
-	void write_result(){
-		cout << "Not programmed. " << endl;
-	}
-	void commit(){
-		cout << "Not programmed. " << endl;
-	}
+	
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new XORI(bit_ins, pl); }
 };
 
@@ -280,22 +224,12 @@ class OR : public Instruction {
 public:
 	OR(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
 		type = "OR";
+		data_type = R;
 		RD = R1(bit_inst);
 		RS = R2(bit_inst);
 		RT = R3(bit_inst);
 	}
-	void issue(){
-		pl->ROB->push(pc_init, R, RD);
-	}
-	void execute(){
-		cout << "Not programmed. " << endl;
-	}
-	void write_result(){
-		cout << "Not programmed. " << endl;
-	}
-	void commit(){
-		cout << "Not programmed. " << endl;
-	}
+	
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new OR(bit_ins, pl); }
 };
 
@@ -303,22 +237,12 @@ class ORI : public Instruction {
 public:
 	ORI(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
 		type = "ORI";
+		data_type = R;
 		RD = R1(bit_inst);
 		RS = R2(bit_inst);
 		immediate = IMM_MASK & bit_inst;
 	}
-	void issue(){
-		pl->ROB->push(pc_init, R, RD);
-	}
-	void execute(){
-		cout << "Not programmed. " << endl;
-	}
-	void write_result(){
-		cout << "Not programmed. " << endl;
-	}
-	void commit(){
-		cout << "Not programmed. " << endl;
-	}
+	
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new ORI(bit_ins, pl); }
 };
 
@@ -326,22 +250,12 @@ class AND : public Instruction {
 public:
 	AND(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
 		type = "AND";
+		data_type = R;
 		RD = R1(bit_inst);
 		RS = R2(bit_inst);
 		RT = R3(bit_inst);
 	}
-	void issue(){
-		pl->ROB->push(pc_init, R, RD);
-	}
-	void execute(){
-		cout << "Not programmed. " << endl;
-	}
-	void write_result(){
-		cout << "Not programmed. " << endl;
-	}
-	void commit(){
-		cout << "Not programmed. " << endl;
-	}
+	
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new AND(bit_ins, pl); }
 };
 
@@ -349,22 +263,12 @@ class ANDI : public Instruction {
 public:
 	ANDI(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
 		type = "ANDI";
+		data_type = R;
 		RD = R1(bit_inst);
 		RS = R2(bit_inst);
 		immediate = IMM_MASK & bit_inst;
 	}
-	void issue(){
-		pl->ROB->push(pc_init, R, RD);
-	}
-	void execute(){
-		cout << "Not programmed. " << endl;
-	}
-	void write_result(){
-		cout << "Not programmed. " << endl;
-	}
-	void commit(){
-		cout << "Not programmed. " << endl;
-	}
+	
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new ANDI(bit_ins, pl); }
 };
 
@@ -372,22 +276,12 @@ class MULT : public Instruction {
 public:
 	MULT(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
 		type = "MULT";
+		data_type = R;
 		RD = R1(bit_inst);
 		RS = R2(bit_inst);
 		RT = R3(bit_inst);
 	}
-	void issue(){
-		pl->ROB->push(pc_init, R, RD);
-	}
-	void execute(){
-		cout << "Not programmed. " << endl;
-	}
-	void write_result(){
-		cout << "Not programmed. " << endl;
-	}
-	void commit(){
-		cout << "Not programmed. " << endl;
-	}
+	
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new MULT(bit_ins, pl); }
 };
 
@@ -395,22 +289,12 @@ class DIV : public Instruction {
 public:
 	DIV(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
 		type = "DIV";
+		data_type = R;
 		RD = R1(bit_inst);
 		RS = R2(bit_inst);
 		RT = R3(bit_inst);
 	}
-	void issue(){
-		pl->ROB->push(pc_init, R, RD);
-	}
-	void execute(){
-		cout << "Not programmed. " << endl;
-	}
-	void write_result(){
-		cout << "Not programmed. " << endl;
-	}
-	void commit(){
-		cout << "Not programmed. " << endl;
-	}
+	
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new DIV(bit_ins, pl); }
 };
 
@@ -421,18 +305,7 @@ public:
 		RS = R1(bit_inst);
 		immediate = bit_inst & IMM_MASK;
 	}
-	void issue(){
-		pl->ROB->push(pc_init, R, RS);
-	}
-	void execute(){
-		cout << "Not programmed. " << endl;
-	}
-	void write_result(){
-		cout << "Not programmed. " << endl;
-	}
-	void commit(){
-		cout << "Not programmed. " << endl;
-	}
+	
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new BEQZ(bit_ins, pl); }
 };
 
@@ -443,18 +316,7 @@ public:
 		RS = R1(bit_inst);
 		immediate = bit_inst & IMM_MASK;
 	}
-	void issue(){
-		pl->ROB->push(pc_init, R, RS);
-	}
-	void execute(){
-		cout << "Not programmed. " << endl;
-	}
-	void write_result(){
-		cout << "Not programmed. " << endl;
-	}
-	void commit(){
-		cout << "Not programmed. " << endl;
-	}
+	
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new BNEZ(bit_ins, pl); }
 };
 
@@ -465,18 +327,7 @@ public:
 		RS = R1(bit_inst);
 		immediate = bit_inst & IMM_MASK;
 	}
-	void issue(){
-		pl->ROB->push(pc_init, R, RS);
-	}
-	void execute(){
-		cout << "Not programmed. " << endl;
-	}
-	void write_result(){
-		cout << "Not programmed. " << endl;
-	}
-	void commit(){
-		cout << "Not programmed. " << endl;
-	}
+	
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new BLTZ(bit_ins, pl); }
 };
 
@@ -487,18 +338,7 @@ public:
 		RS = R1(bit_inst);
 		immediate = bit_inst & IMM_MASK;
 	}
-	void issue(){
-		pl->ROB->push(pc_init, R, RS);
-	}
-	void execute(){
-		cout << "Not programmed. " << endl;
-	}
-	void write_result(){
-		cout << "Not programmed. " << endl;
-	}
-	void commit(){
-		cout << "Not programmed. " << endl;
-	}
+	
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new BGTZ(bit_ins, pl); }
 };
 
@@ -509,18 +349,7 @@ public:
 		RS = R1(bit_inst);
 		immediate = bit_inst & IMM_MASK;
 	}
-	void issue(){
-		pl->ROB->push(pc_init, R, RS);
-	}
-	void execute(){
-		cout << "Not programmed. " << endl;
-	}
-	void write_result(){
-		cout << "Not programmed. " << endl;
-	}
-	void commit(){
-		cout << "Not programmed. " << endl;
-	}
+	
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new BLEZ(bit_ins, pl); }
 };
 
@@ -531,18 +360,7 @@ public:
 		RS = R1(bit_inst);
 		immediate = bit_inst & IMM_MASK;
 	}
-	void issue(){
-		pl->ROB->push(pc_init, R, RS);
-	}
-	void execute(){
-		cout << "Not programmed. " << endl;
-	}
-	void write_result(){
-		cout << "Not programmed. " << endl;
-	}
-	void commit(){
-		cout << "Not programmed. " << endl;
-	}
+	
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new BGEZ(bit_ins, pl); }
 };
 
@@ -552,18 +370,7 @@ public:
 		type = "JUMP";
 		immediate = bit_inst & IMM_MASK;
 	}
-	void issue(){
-		return;
-	}
-	void execute(){
-		cout << "Not programmed. " << endl;
-	}
-	void write_result(){
-		cout << "Not programmed. " << endl;
-	}
-	void commit(){
-		cout << "Not programmed. " << endl;
-	}
+	
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new JUMP(bit_ins, pl); }
 };
 
@@ -572,18 +379,7 @@ public:
 	EOP(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
 		type = "EOP";
 	}
-	void issue(){
-		return;
-	}
-	void execute(){
-		cout << "Not programmed. " << endl;
-	}
-	void write_result(){
-		cout << "Not programmed. " << endl;
-	}
-	void commit(){
-		cout << "Not programmed. " << endl;
-	}
+	
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new EOP(bit_ins, pl); }
 };
 
@@ -591,21 +387,11 @@ class LWS : public Instruction {
 public:
 	LWS(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
 		type = "LWS";
+		data_type = F;
 		RD = R1(bit_inst);
 		RS = R2(bit_inst);
 	}
-	void issue(){
-		pl->ROB->push(pc_init, F, RD);
-	}
-	void execute(){
-		cout << "Not programmed. " << endl;
-	}
-	void write_result(){
-		cout << "Not programmed. " << endl;
-	}
-	void commit(){
-		cout << "Not programmed. " << endl;
-	}
+	
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new LWS(bit_ins, pl); }
 };
 
@@ -613,21 +399,11 @@ class SWS : public Instruction {
 public:
 	SWS(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
 		type = "SWS";
+		data_type = F;
 		RT = R1(bit_inst);
 		RS = R2(bit_inst);
 	}
-	void issue(){
-		pl->ROB->push(pc_init, F, RT);
-	}
-	void execute(){
-		cout << "Not programmed. " << endl;
-	}
-	void write_result(){
-		cout << "Not programmed. " << endl;
-	}
-	void commit(){
-		cout << "Not programmed. " << endl;
-	}
+	
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new SWS(bit_ins, pl); }
 };
 
@@ -635,22 +411,12 @@ class ADDS : public Instruction {
 public:
 	ADDS(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
 		type = "ADDS";
+		data_type = F;
 		RD = R1(bit_inst);
 		RS = R2(bit_inst);
 		RT = R3(bit_inst);
 	}
-	void issue(){
-		pl->ROB->push(pc_init, F, RD);
-	}
-	void execute(){
-		cout << "Not programmed. " << endl;
-	}
-	void write_result(){
-		cout << "Not programmed. " << endl;
-	}
-	void commit(){
-		cout << "Not programmed. " << endl;
-	}
+	
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new ADDS(bit_ins, pl); }
 };
 
@@ -658,22 +424,12 @@ class SUBS : public Instruction {
 public:
 	SUBS(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
 		type = "SUBS";
+		data_type = F;
 		RD = R1(bit_inst);
 		RS = R2(bit_inst);
 		RT = R3(bit_inst);
 	}
-	void issue(){
-		pl->ROB->push(pc_init, F, RD);
-	}
-	void execute(){
-		cout << "Not programmed. " << endl;
-	}
-	void write_result(){
-		cout << "Not programmed. " << endl;
-	}
-	void commit(){
-		cout << "Not programmed. " << endl;
-	}
+	
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new SUBS(bit_ins, pl); }
 };
 
@@ -681,22 +437,12 @@ class MULTS : public Instruction {
 public:
 	MULTS(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
 		type = "MULTS";
+		data_type = F;
 		RD = R1(bit_inst);
 		RS = R2(bit_inst);
 		RT = R3(bit_inst);
 	}
-	void issue(){
-		pl->ROB->push(pc_init, F, RD);
-	}
-	void execute(){
-		cout << "Not programmed. " << endl;
-	}
-	void write_result(){
-		cout << "Not programmed. " << endl;
-	}
-	void commit(){
-		cout << "Not programmed. " << endl;
-	}
+	
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new MULTS(bit_ins, pl); }
 };
 
@@ -704,22 +450,12 @@ class DIVS : public Instruction {
 public:
 	DIVS(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
 		type = "DIVS";
+		data_type = F;
 		RD = R1(bit_inst);
 		RS = R2(bit_inst);
 		RT = R3(bit_inst);
 	}
-	void issue(){
-		pl->ROB->push(pc_init, F, RD);
-	}
-	void execute(){
-		cout << "Not programmed. " << endl;
-	}
-	void write_result(){
-		cout << "Not programmed. " << endl;
-	}
-	void commit(){
-		cout << "Not programmed. " << endl;
-	}
+	
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new DIVS(bit_ins, pl); }
 };
 

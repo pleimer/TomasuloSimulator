@@ -1,3 +1,13 @@
+/*
+Issues that could arrise: I have not exhaustively tested the push() function of the ROB - I know basic stacking works, but
+I do not know how it behaves when there is no instruction on the top of the stack - if you suspect an ROB issue later, this could
+be the issue
+
+ReservationStations have not been tested - could be source of problem later on
+
+IMPLEMENT: On HardwareExceptions, show info on what unit the exception occurred
+*/
+
 #include "hardware.h"
 #include <iomanip>
 #include <sstream>
@@ -48,8 +58,6 @@ void ProgramCounter::print(){
 
 
 
-//------------------------------------------------------------------------------------------------------------------------------------------------
-
 ReorderBuffer::ReorderBuffer(unsigned rob_size){
 	this->rob_size = rob_size;
 	head = 0;
@@ -84,7 +92,7 @@ void ReorderBuffer::push(unsigned pc, reg_t data_type, unsigned dest){
 		entry_file[0]->data_type = data_type;
 		entry_file[0]->dest = dest;
 		entry_file[0]->busy = true;
-		cout << "Installing on location 0. " << endl;
+
 	}
 	else {
 		//find empty location after last instruction entered, put data there
@@ -93,7 +101,7 @@ void ReorderBuffer::push(unsigned pc, reg_t data_type, unsigned dest){
 			inst_index++;
 			if (inst_index >= rob_size) inst_index = 0;
 		}
-		cout << "Installing on location " << inst_index << endl;
+
 		entry_file[inst_index]->pc = pc;
 		entry_file[inst_index]->data_type = data_type;
 		entry_file[inst_index]->dest = dest;
@@ -234,7 +242,7 @@ void ReorderBuffer::print(){
 
 }
 
-//------------------------------------------------------------------------------------------------------------------------------------------------
+
 FPRegisterUnit::FPRegisterUnit(unsigned num_registers){
 	for (unsigned int i = 0; i < 32; i++){
 		register_file[i] = new FPRegister;
@@ -281,7 +289,282 @@ void MemoryUnit::write(unsigned data, unsigned addrPtr){
 	unsigned2char(data, data_memory + addrPtr);
 }
 
-void MemoryUnit::alert(){
-	Lock::alert();
+
+ReservationStationUnit::ReservationStationUnit(unsigned num_stations, string name){
+	stringstream ss;
+	this->num_stations = num_stations;
+
+	for (unsigned i=0; i < num_stations; i++){
+		station_file.push_back(new ReservationStation);
+		station_file[i]->clear();
+
+		//name instruction
+		ss.str("");
+		ss.clear();
+		ss << i;
+		station_file[i]->name = name + ss.str();
+	}
 }
+
+void ReservationStationUnit::clear(unsigned entry){
+	station_file[entry]->clear();
+}
+
+void ReservationStationUnit::ReservationStation::clear(){
+	busy = false;
+	inst_address = UNDEFINED;
+	Vj = UNDEFINED;
+	Vk = UNDEFINED;
+	Qj = UNDEFINED;
+	Qk = UNDEFINED;
+	dest = UNDEFINED;
+	address = UNDEFINED;
+}
+
+void ReservationStationUnit::store(unsigned inst_address,unsigned Vj, unsigned Vk, unsigned Qj, unsigned Qk, unsigned dest, unsigned address, unsigned entry){
+	//if full, throw hardware exception
+	bool isFull = true;
+	for (unsigned i = 0; i < station_file.size(); i++){
+		if (!station_file[i]->busy) isFull = false;
+	}
+	if (isFull) throw HardwareException();
+
+
+	//set entry busy, store given values
+	//caller responsible for setting undefined values
+	station_file[entry]->store(inst_address, Vj, Vk, Qj, Qk, dest, address);
+}
+
+void ReservationStationUnit::ReservationStation::store(unsigned inst_address, unsigned Vj, unsigned Vk, unsigned Qj, unsigned Qk, unsigned dest, unsigned address){
+	this->inst_address = inst_address;
+	this->Vj = Vj;
+	this->Vk = Vk;
+	this->Qj = Qj;
+	this->Qk = Qk;
+	this->dest = dest;
+	this->address = address;
+}
+
+void ReservationStationUnit::checkout(unsigned rob_entry, unsigned data){
+	for (unsigned i = 0; i < station_file.size(); i++){
+		if (station_file[i]->Qj == rob_entry) {
+			station_file[i]->Qj = UNDEFINED;
+			station_file[i]->Vj = data;
+		}
+		if (station_file[i]->Qk == rob_entry) {
+			station_file[i]->Qk = UNDEFINED;
+			station_file[i]->Vk = data;
+		}
+	}
+}
+
+
+IntegerFile::IntegerFile(unsigned num_ints, unsigned latency){
+	num_units = num_ints;
+	for (unsigned i = 0; i < num_ints; i++){
+		int_file.push_back(new Integer(latency));
+	}
+}
+
+IntegerFile::Integer::Integer(unsigned latency){
+	this->latency = latency;
+}
+
+
+void IntegerFile::assign(int op1, int op2, integer_t op_type, unsigned dest){
+	//try to use first unit available
+	bool nonAvailable = true;
+	for (unsigned i = 0; i < int_file.size(); i++){
+		try{
+			int_file[i]->push_operands(op1,op2,op_type,dest);
+			nonAvailable = false;
+		}
+		catch (exception &e){
+			cerr << e.what();
+		}
+	}
+	if (nonAvailable) throw HardwareException();
+}
+
+void IntegerFile::Integer::push_operands(int op1, int op2, integer_t op_type, unsigned dest){
+	isLocked();
+	this->op1 = op1;
+	this->op2 = op2;
+	this->op_type = op_type;
+	this->dest = dest;
+}
+
+int IntegerFile::checkout(unsigned rob_dest){
+	int result = UNDEFINED;
+	for (unsigned i = 0; i < int_file.size(); i++){
+		if (int_file[i]->dest == rob_dest) result = int_file[i]->operate();
+	}
+	return result;
+}
+
+int IntegerFile::Integer::operate(){
+		isLocked();
+		switch (op_type){
+		case AD: return op1 + op2;
+		case S: return op1 - op2;
+		case X: return op1 ^ op2;
+		case O: return op1 | op2;
+		case AN: return op1 & op2;
+		default: break;
+		}
+	}
+
+
+/*--------------------------------------------------------------------------------------------*/
+
+AdderFile::AdderFile(unsigned num_ints, unsigned latency){
+	num_units = num_ints;
+	for (unsigned i = 0; i < num_ints; i++){
+		adder_file.push_back(new Adder(latency));
+	}
+}
+
+AdderFile::Adder::Adder(unsigned latency){
+	this->latency = latency;
+}
+
+
+void AdderFile::assign(int op1, int op2, unsigned dest){
+	//try to use first unit available
+	bool nonAvailable = true;
+	for (unsigned i = 0; i < adder_file.size(); i++){
+		try{
+			adder_file[i]->push_operands(op1, op2, dest);
+			nonAvailable = false;
+		}
+		catch (exception &e){
+			cerr << e.what();
+		}
+	}
+	if (nonAvailable) throw HardwareException();
+}
+
+void AdderFile::Adder::push_operands(int op1, int op2, unsigned dest){
+	isLocked();
+	this->op1 = op1;
+	this->op2 = op2;
+	this->dest = dest;
+}
+
+float AdderFile::checkout(unsigned rob_dest){
+	int result = UNDEFINED;
+	for (unsigned i = 0; i < adder_file.size(); i++){
+		if (adder_file[i]->dest == rob_dest) result = adder_file[i]->operate();
+	}
+	return result;
+}
+
+float AdderFile::Adder::operate(){
+	isLocked();
+	return op1 + op2;
+}
+
+
+/*--------------------------------------------------------------------------------------------*/
+
+MultiplierFile::MultiplierFile(unsigned num_ints, unsigned latency){
+	num_units = num_ints;
+	for (unsigned i = 0; i < num_ints; i++){
+		multiplier_file.push_back(new Multiplier(latency));
+	}
+}
+
+MultiplierFile::Multiplier::Multiplier(unsigned latency){
+	this->latency = latency;
+}
+
+
+void MultiplierFile::assign(int op1, int op2, unsigned dest){
+	//try to use first unit available
+	bool nonAvailable = true;
+	for (unsigned i = 0; i < multiplier_file.size(); i++){
+		try{
+			multiplier_file[i]->push_operands(op1, op2, dest);
+			nonAvailable = false;
+		}
+		catch (exception &e){
+			cerr << e.what();
+		}
+	}
+	if (nonAvailable) throw HardwareException();
+}
+
+void MultiplierFile::Multiplier::push_operands(int op1, int op2, unsigned dest){
+	isLocked();
+	this->op1 = op1;
+	this->op2 = op2;
+	this->dest = dest;
+}
+
+float MultiplierFile::checkout(unsigned rob_dest){
+	int result = UNDEFINED;
+	for (unsigned i = 0; i < multiplier_file.size(); i++){
+		if (multiplier_file[i]->dest == rob_dest) result = multiplier_file[i]->operate();
+	}
+	return result;
+}
+
+float MultiplierFile::Multiplier::operate(){
+	isLocked();
+	return op1 * op2;
+}
+
+
+/*--------------------------------------------------------------------------------------------*/
+
+DividerFile::DividerFile(unsigned num_ints, unsigned latency){
+	num_units = num_ints;
+	for (unsigned i = 0; i < num_ints; i++){
+		divider_file.push_back(new Divider(latency));
+	}
+}
+
+DividerFile::Divider::Divider(unsigned latency){
+	this->latency = latency;
+}
+
+
+void DividerFile::assign(int op1, int op2, unsigned dest){
+	//try to use first unit available
+	bool nonAvailable = true;
+	for (unsigned i = 0; i < divider_file.size(); i++){
+		try{
+			divider_file[i]->push_operands(op1, op2, dest);
+			nonAvailable = false;
+		}
+		catch (exception &e){
+			cerr << e.what();
+		}
+	}
+	if (nonAvailable) throw HardwareException();
+}
+
+void DividerFile::Divider::push_operands(int op1, int op2, unsigned dest){
+	isLocked();
+	this->op1 = op1;
+	this->op2 = op2;
+	this->dest = dest;
+}
+
+float DividerFile::checkout(unsigned rob_dest){
+	int result = UNDEFINED;
+	for (unsigned i = 0; i < divider_file.size(); i++){
+		if (divider_file[i]->dest == rob_dest) result = divider_file[i]->operate();
+	}
+	return result;
+}
+
+float DividerFile::Divider::operate(){
+	isLocked();
+	return op1 / op2;
+}
+
+
+
+
 

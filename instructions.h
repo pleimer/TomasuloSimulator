@@ -30,6 +30,7 @@ protected:
 	int bit_inst;
 	Pipeline * pl;
 	unsigned pc_init;
+	reg_t data_type;
 	stage_t stage;
 
 	int immediate;
@@ -45,13 +46,16 @@ public:
 	void assess();
 
 	//pipeline stages
-	virtual void issue() = 0;
-	virtual void execute() = 0;
-	virtual void write_result() = 0;
-	virtual void commit() = 0;
+	virtual void issue();
+	virtual void execute();
+	virtual void write_result();
+	virtual void commit();
 
 	void print();
 };
+
+
+
 
 typedef Instruction* (*CreateInstFn)(int bit_inst, Pipeline * pl); //funct pointer to class creator
 

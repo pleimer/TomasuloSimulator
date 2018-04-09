@@ -1,4 +1,5 @@
 #include "sim_ooo.h"
+//#include "instructions.h"
 #include <stdlib.h>
 #include <iostream>
 #include <fstream>
@@ -65,6 +66,8 @@ sim_ooo::sim_ooo(unsigned mem_size,
 		num_load_res_stations,
 		max_issue);
 
+	controller = new Controller(rob_size, pipeline);
+
 }
 	
 sim_ooo::~sim_ooo(){
@@ -89,7 +92,7 @@ void sim_ooo::init_exec_unit(exe_unit_t exec_unit, unsigned latency, unsigned in
 
 void sim_ooo::load_program(const char *filename, unsigned base_address){
 	assembler as;
-	as.assemble(filename,pipeline->inst_mem_base());
+	as.assemble(filename,controller->inst_mem_base());
 	pipeline->initialize(base_address);
 }
 

@@ -11,8 +11,8 @@ Pipeline::Pipeline(unsigned mem_size,
 	unsigned max_issue){
 
 	//memory instantiations
-	inst_memory = new InstructionMemory((unsigned)256);
-	inst_queue = new InstructionQueue(rob_size);//same size as ROB
+	//inst_memory = new InstructionMemory((unsigned)256);
+	//inst_queue = new InstructionQueue(rob_size);//same size as ROB
 
 }
 
@@ -25,15 +25,12 @@ void Pipeline::initialize(unsigned base_address){
 	pc.load(base_address);
 }
 
-unsigned char * Pipeline::inst_mem_base(){
-	return inst_memory->get_mem_ptr();
-}
-
 void Pipeline::cycle(){
 	clock.posedge(*this);
-	try{
-		while (true){
+	/*try{
+		while (true){ //fill inst queue whenever it starts to empty
 			instruction = inst_memory->fetch(pc.get());
+			//pipeline.push_back(instruction);
 			inst_queue->push(instruction);
 			pc.pulse();
 		}
@@ -41,7 +38,15 @@ void Pipeline::cycle(){
 	catch (exception &e){
 		cerr << e.what();
 	}
-	instruction = inst_queue->pop();
-	cout << "Issued: ";
-	instruction->print();
+
+	try{
+		instruction->issue();
+		//instruction = inst_queue->pop();
+		cout << "Issued: ";
+		instruction->print();
+	}
+	catch (exception &e){
+		cerr << e.what();
+	}*/
 }
+	

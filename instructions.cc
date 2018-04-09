@@ -14,7 +14,9 @@ using namespace std;
 #define R2(X) (X << (INST_SIZE - OP_SIZE - REG_REF_SIZE*2))
 #define R3(X) (X << (INST_SIZE - OP_SIZE - REG_REF_SIZE*3))
 
-Instruction::Instruction(int bit_inst){
+Instruction::Instruction(int bit_inst, Pipeline * pl){
+
+	this->pl = pl;
 	this->bit_inst = bit_inst;
 	type = OPCODE(bit_inst);
 
@@ -39,14 +41,14 @@ Instruction_Factory *Instruction_Factory::Get(){
 
 class LW : public Instruction {
 public:
-	LW(int bit_inst) : Instruction(bit_inst){
+	LW(int bit_inst, Pipeline *pl) : Instruction(bit_inst, pl){
 		type = "LW";
 
 		RD = R1(bit_inst);
 		RS = R2(bit_inst);
 	}
 	void issue(){
-		cout << "Not programmed. " << endl;
+		
 	}
 	void execute(){
 		cout << "Not programmed. " << endl;
@@ -57,12 +59,12 @@ public:
 	void commit(){
 		cout << "Not programmed. " << endl;
 	}
-	static Instruction *  Create(int bit_inst) { return new LW(bit_inst); }
+	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new LW(bit_ins, pl); }
 };
 
 class SW : public Instruction {
 public:
-	SW(int bit_inst) : Instruction(bit_inst){
+	SW(int bit_inst, Pipeline *pl) : Instruction(bit_inst, pl){
 		type = "SW";
 
 		RS = R2(bit_inst);
@@ -80,12 +82,12 @@ public:
 	void commit(){
 		cout << "Not programmed. " << endl;
 	}
-	static Instruction *  Create(int bit_inst) { return new SW(bit_inst); }
+	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new SW(bit_ins, pl); }
 };
 
 class ADD : public Instruction {
 public:
-	ADD(int bit_inst) : Instruction(bit_inst){
+	ADD(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
 		type = "ADD";
 		RD = R1(bit_inst);
 		RS = R2(bit_inst);
@@ -103,12 +105,12 @@ public:
 	void commit(){
 		cout << "Not programmed. " << endl;
 	}
-	static Instruction *  Create(int bit_inst) { return new ADD(bit_inst); }
+	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new ADD(bit_ins, pl); }
 };
 
 class ADDI : public Instruction {
 public:
-	ADDI(int bit_inst) : Instruction(bit_inst){
+	ADDI(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
 		type = "ADDI";
 		RD = R1(bit_inst);
 		RS = R2(bit_inst);
@@ -126,12 +128,12 @@ public:
 	void commit(){
 		cout << "Not programmed. " << endl;
 	}
-	static Instruction *  Create(int bit_inst) { return new ADDI(bit_inst); }
+	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new ADDI(bit_ins, pl); }
 };
 
 class SUB : public Instruction {
 public:
-	SUB(int bit_inst) : Instruction(bit_inst){
+	SUB(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
 		type = "SUB";
 		RD = R1(bit_inst);
 		RS = R2(bit_inst);
@@ -149,12 +151,12 @@ public:
 	void commit(){
 		cout << "Not programmed. " << endl;
 	}
-	static Instruction *  Create(int bit_inst) { return new SUB(bit_inst); }
+	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new SUB(bit_ins, pl); }
 };
 
 class SUBI : public Instruction {
 public:
-	SUBI(int bit_inst) : Instruction(bit_inst){
+	SUBI(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
 		type = "SUBI";
 		RD = R1(bit_inst);
 		RS = R2(bit_inst);
@@ -172,12 +174,12 @@ public:
 	void commit(){
 		cout << "Not programmed. " << endl;
 	}
-	static Instruction *  Create(int bit_inst) { return new SUBI(bit_inst); }
+	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new SUBI(bit_ins, pl); }
 };
 
 class XOR : public Instruction {
 public:
-	XOR(int bit_inst) : Instruction(bit_inst){
+	XOR(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
 		type = "XOR";
 		RD = R1(bit_inst);
 		RS = R2(bit_inst);
@@ -195,12 +197,12 @@ public:
 	void commit(){
 		cout << "Not programmed. " << endl;
 	}
-	static Instruction *  Create(int bit_inst) { return new XOR(bit_inst); }
+	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new XOR(bit_ins, pl); }
 };
 
 class XORI : public Instruction {
 public:
-	XORI(int bit_inst) : Instruction(bit_inst){
+	XORI(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
 		type = "XORI";
 		RD = R1(bit_inst);
 		RS = R2(bit_inst);
@@ -218,12 +220,12 @@ public:
 	void commit(){
 		cout << "Not programmed. " << endl;
 	}
-	static Instruction *  Create(int bit_inst) { return new XORI(bit_inst); }
+	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new XORI(bit_ins, pl); }
 };
 
 class OR : public Instruction {
 public:
-	OR(int bit_inst) : Instruction(bit_inst){
+	OR(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
 		type = "OR";
 		RD = R1(bit_inst);
 		RS = R2(bit_inst);
@@ -241,12 +243,12 @@ public:
 	void commit(){
 		cout << "Not programmed. " << endl;
 	}
-	static Instruction *  Create(int bit_inst) { return new OR(bit_inst); }
+	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new OR(bit_ins, pl); }
 };
 
 class ORI : public Instruction {
 public:
-	ORI(int bit_inst) : Instruction(bit_inst){
+	ORI(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
 		type = "ORI";
 		RD = R1(bit_inst);
 		RS = R2(bit_inst);
@@ -264,12 +266,12 @@ public:
 	void commit(){
 		cout << "Not programmed. " << endl;
 	}
-	static Instruction *  Create(int bit_inst) { return new ORI(bit_inst); }
+	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new ORI(bit_ins, pl); }
 };
 
 class AND : public Instruction {
 public:
-	AND(int bit_inst) : Instruction(bit_inst){
+	AND(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
 		type = "AND";
 		RD = R1(bit_inst);
 		RS = R2(bit_inst);
@@ -287,12 +289,12 @@ public:
 	void commit(){
 		cout << "Not programmed. " << endl;
 	}
-	static Instruction *  Create(int bit_inst) { return new AND(bit_inst); }
+	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new AND(bit_ins, pl); }
 };
 
 class ANDI : public Instruction {
 public:
-	ANDI(int bit_inst) : Instruction(bit_inst){
+	ANDI(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
 		type = "ANDI";
 		RD = R1(bit_inst);
 		RS = R2(bit_inst);
@@ -310,12 +312,12 @@ public:
 	void commit(){
 		cout << "Not programmed. " << endl;
 	}
-	static Instruction *  Create(int bit_inst) { return new ANDI(bit_inst); }
+	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new ANDI(bit_ins, pl); }
 };
 
 class MULT : public Instruction {
 public:
-	MULT(int bit_inst) : Instruction(bit_inst){
+	MULT(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
 		type = "MULT";
 		RD = R1(bit_inst);
 		RS = R2(bit_inst);
@@ -333,12 +335,12 @@ public:
 	void commit(){
 		cout << "Not programmed. " << endl;
 	}
-	static Instruction *  Create(int bit_inst) { return new MULT(bit_inst); }
+	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new MULT(bit_ins, pl); }
 };
 
 class DIV : public Instruction {
 public:
-	DIV(int bit_inst) : Instruction(bit_inst){
+	DIV(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
 		type = "DIV";
 		RD = R1(bit_inst);
 		RS = R2(bit_inst);
@@ -356,12 +358,12 @@ public:
 	void commit(){
 		cout << "Not programmed. " << endl;
 	}
-	static Instruction *  Create(int bit_inst) { return new DIV(bit_inst); }
+	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new DIV(bit_ins, pl); }
 };
 
 class BEQZ : public Instruction {
 public:
-	BEQZ(int bit_inst) : Instruction(bit_inst){
+	BEQZ(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
 		type = "BEQZ";
 		RS = R1(bit_inst);
 		immediate = bit_inst & IMM_MASK;
@@ -378,12 +380,12 @@ public:
 	void commit(){
 		cout << "Not programmed. " << endl;
 	}
-	static Instruction *  Create(int bit_inst) { return new BEQZ(bit_inst); }
+	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new BEQZ(bit_ins, pl); }
 };
 
 class BNEZ : public Instruction {
 public:
-	BNEZ(int bit_inst) : Instruction(bit_inst){
+	BNEZ(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
 		type = "BNEZ";
 		RS = R1(bit_inst);
 		immediate = bit_inst & IMM_MASK;
@@ -400,12 +402,12 @@ public:
 	void commit(){
 		cout << "Not programmed. " << endl;
 	}
-	static Instruction *  Create(int bit_inst) { return new BNEZ(bit_inst); }
+	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new BNEZ(bit_ins, pl); }
 };
 
 class BLTZ : public Instruction {
 public:
-	BLTZ(int bit_inst) : Instruction(bit_inst){
+	BLTZ(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
 		type = "BLTZ";
 		RS = R1(bit_inst);
 		immediate = bit_inst & IMM_MASK;
@@ -422,12 +424,12 @@ public:
 	void commit(){
 		cout << "Not programmed. " << endl;
 	}
-	static Instruction *  Create(int bit_inst) { return new BLTZ(bit_inst); }
+	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new BLTZ(bit_ins, pl); }
 };
 
 class BGTZ : public Instruction {
 public:
-	BGTZ(int bit_inst) : Instruction(bit_inst){
+	BGTZ(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
 		type = "BGTZ";
 		RS = R1(bit_inst);
 		immediate = bit_inst & IMM_MASK;
@@ -444,12 +446,12 @@ public:
 	void commit(){
 		cout << "Not programmed. " << endl;
 	}
-	static Instruction *  Create(int bit_inst) { return new BGTZ(bit_inst); }
+	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new BGTZ(bit_ins, pl); }
 };
 
 class BLEZ : public Instruction {
 public:
-	BLEZ(int bit_inst) : Instruction(bit_inst){
+	BLEZ(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
 		type = "BLEZ";
 		RS = R1(bit_inst);
 		immediate = bit_inst & IMM_MASK;
@@ -466,12 +468,12 @@ public:
 	void commit(){
 		cout << "Not programmed. " << endl;
 	}
-	static Instruction *  Create(int bit_inst) { return new BLEZ(bit_inst); }
+	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new BLEZ(bit_ins, pl); }
 };
 
 class BGEZ : public Instruction {
 public:
-	BGEZ(int bit_inst) : Instruction(bit_inst){
+	BGEZ(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
 		type = "BGEZ";
 		RS = R1(bit_inst);
 		immediate = bit_inst & IMM_MASK;
@@ -488,12 +490,12 @@ public:
 	void commit(){
 		cout << "Not programmed. " << endl;
 	}
-	static Instruction *  Create(int bit_inst) { return new BGEZ(bit_inst); }
+	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new BGEZ(bit_ins, pl); }
 };
 
 class JUMP : public Instruction {
 public:
-	JUMP(int bit_inst) : Instruction(bit_inst){
+	JUMP(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
 		type = "JUMP";
 		immediate = bit_inst & IMM_MASK;
 	}
@@ -509,12 +511,12 @@ public:
 	void commit(){
 		cout << "Not programmed. " << endl;
 	}
-	static Instruction *  Create(int bit_inst) { return new JUMP(bit_inst); }
+	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new JUMP(bit_ins, pl); }
 };
 
 class EOP : public Instruction {
 public:
-	EOP(int bit_inst) : Instruction(bit_inst){
+	EOP(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
 		type = "EOP";
 	}
 	void issue(){
@@ -529,12 +531,12 @@ public:
 	void commit(){
 		cout << "Not programmed. " << endl;
 	}
-	static Instruction *  Create(int bit_inst) { return new EOP(bit_inst); }
+	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new EOP(bit_ins, pl); }
 };
 
 class LWS : public Instruction {
 public:
-	LWS(int bit_inst) : Instruction(bit_inst){
+	LWS(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
 		type = "LWS";
 		RD = R1(bit_inst);
 		RS = R2(bit_inst);
@@ -551,12 +553,12 @@ public:
 	void commit(){
 		cout << "Not programmed. " << endl;
 	}
-	static Instruction *  Create(int bit_inst) { return new LWS(bit_inst); }
+	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new LWS(bit_ins, pl); }
 };
 
 class SWS : public Instruction {
 public:
-	SWS(int bit_inst) : Instruction(bit_inst){
+	SWS(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
 		type = "SWS";
 		RT = R1(bit_inst);
 		RS = R2(bit_inst);
@@ -573,12 +575,12 @@ public:
 	void commit(){
 		cout << "Not programmed. " << endl;
 	}
-	static Instruction *  Create(int bit_inst) { return new SWS(bit_inst); }
+	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new SWS(bit_ins, pl); }
 };
 
 class ADDS : public Instruction {
 public:
-	ADDS(int bit_inst) : Instruction(bit_inst){
+	ADDS(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
 		type = "ADDS";
 		RD = R1(bit_inst);
 		RS = R2(bit_inst);
@@ -596,12 +598,12 @@ public:
 	void commit(){
 		cout << "Not programmed. " << endl;
 	}
-	static Instruction *  Create(int bit_inst) { return new ADDS(bit_inst); }
+	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new ADDS(bit_ins, pl); }
 };
 
 class SUBS : public Instruction {
 public:
-	SUBS(int bit_inst) : Instruction(bit_inst){
+	SUBS(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
 		type = "SUBS";
 		RD = R1(bit_inst);
 		RS = R2(bit_inst);
@@ -619,12 +621,12 @@ public:
 	void commit(){
 		cout << "Not programmed. " << endl;
 	}
-	static Instruction *  Create(int bit_inst) { return new SUBS(bit_inst); }
+	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new SUBS(bit_ins, pl); }
 };
 
 class MULTS : public Instruction {
 public:
-	MULTS(int bit_inst) : Instruction(bit_inst){
+	MULTS(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
 		type = "MULTS";
 		RD = R1(bit_inst);
 		RS = R2(bit_inst);
@@ -642,12 +644,12 @@ public:
 	void commit(){
 		cout << "Not programmed. " << endl;
 	}
-	static Instruction *  Create(int bit_inst) { return new MULTS(bit_inst); }
+	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new MULTS(bit_ins, pl); }
 };
 
 class DIVS : public Instruction {
 public:
-	DIVS(int bit_inst) : Instruction(bit_inst){
+	DIVS(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
 		type = "DIVS";
 		RD = R1(bit_inst);
 		RS = R2(bit_inst);
@@ -665,7 +667,7 @@ public:
 	void commit(){
 		cout << "Not programmed. " << endl;
 	}
-	static Instruction *  Create(int bit_inst) { return new DIVS(bit_inst); }
+	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new DIVS(bit_ins, pl); }
 };
 
 
@@ -704,10 +706,10 @@ void Instruction_Factory::Register(const opcode_t type, CreateInstFn pfnCreate){
 	m_FactoryMap[type] = pfnCreate;
 }
 
-Instruction *Instruction_Factory::Create_Instruction(const opcode_t type, int bit_inst){
+Instruction *Instruction_Factory::Create_Instruction(const opcode_t type, int bit_inst, Pipeline * pl){
 	FactoryMap::iterator it = m_FactoryMap.find(type);
 	if (it != m_FactoryMap.end())
-		return it->second(bit_inst);//return function pointer
+		return it->second(bit_inst, pl);//return function pointer
 	return NULL;
 }
 

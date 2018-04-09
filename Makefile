@@ -4,7 +4,7 @@ WARN = -pedantic
 CFLAGS = $(OPT) $(WARN) 
 
 # List corresponding compiled object files here (.o files)
-SIM_OBJ = sim_ooo.o assem.o instructions.o hardware.o pipeline.o
+SIM_OBJ = sim_ooo.o assem.o instructions.o hardware.o pipeline.o controller.o
 
 TESTCASES = testcase1 testcase2 testcase3 testcase4 testcase5 
  
@@ -18,10 +18,10 @@ all:	$(TESTCASES)
 	$(CC) $(CFLAGS) -c *.cc
 
 #rule for creating the object files for all the testcases in the "testcases" folder
+
 testcase: 
 	$(MAKE) -C testcases
 
-# rules for making testcases
 testcase1: .cc.o testcase 
 	$(CC) -o bin/testcase1 $(CFLAGS) $(SIM_OBJ) testcases/testcase1.o
 

@@ -5,7 +5,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <sstream>
-#include "pipeline.h"
+#include "controller.h"
 
 
 class sim_ooo{
@@ -18,8 +18,9 @@ class sim_ooo{
 	//memory size in bytes
 	unsigned data_memory_size;
 
-	//pipeline implementations
+	//pipeline and controller implementations
 	Pipeline * pipeline;
+	Controller * controller;
 
 public:
 

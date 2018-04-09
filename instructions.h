@@ -5,21 +5,8 @@
 #include <iterator>
 #include <iostream>
 #include <string>
+#include "pipeline.h"
 
-typedef enum { LW, SW, ADD, ADDI, SUB, SUBI, XOR, XORI, OR, ORI, AND, ANDI, MULT, DIV, BEQZ, BNEZ, BLTZ, BGTZ, BLEZ, BGEZ, JUMP, EOP, LWS, SWS, ADDS, SUBS, MULTS, DIVS } opcode_t;
-
-typedef enum { INTEGER_RS, ADD_RS, MULT_RS, LOAD_B } res_station_t;
-
-typedef enum { INTEGER, ADDER, MULTIPLIER, DIVIDER, MEMORY } exe_unit_t;
-
-typedef enum{ ISSUE, EXECUTE, WRITE_RESULT, COMMIT } stage_t;
-
-typedef enum{R, F} reg_t;
-
-#define UNDEFINED 0xFFFFFFFF //constant used for initialization
-#define NUM_GP_REGISTERS 32
-#define NUM_OPCODES 28
-#define NUM_STAGES 4
 
 #define INST_SIZE 32
 #define OP_SIZE 6
@@ -28,21 +15,23 @@ typedef enum{R, F} reg_t;
 
 #define OPCODE(X) ((opcode_t)((X & 0xFC000000) >> (INST_SIZE-OP_SIZE)))
 
-class Instruction{ //super class that shows all data types and functions an instruction must have
+class Instruction { //super class that shows all data types and functions an instruction must have
 
 protected:
 
 	std::string type;
 
 	int bit_inst;
+	Pipeline * pl;
 
 	int immediate;
 	unsigned int RD;
 	unsigned int RS;
 	unsigned int RT;
 
+
 public:
-	Instruction(int bit_inst);
+	Instruction(int bit_inst, Pipeline * pl);
 
 	//pipeline stages
 	virtual void issue() = 0;
@@ -53,7 +42,7 @@ public:
 	void print();
 };
 
-typedef Instruction* (*CreateInstFn)(int bit_inst); //funct pointer to class creator
+typedef Instruction* (*CreateInstFn)(int bit_inst, Pipeline * pl); //funct pointer to class creator
 
 class Instruction_Factory{
 	private:
@@ -70,7 +59,7 @@ class Instruction_Factory{
 		static Instruction_Factory *Get();
 
 		void Register(const opcode_t type, CreateInstFn pfnCreate);
-		Instruction *Create_Instruction(const opcode_t type, int bit_inst);
+		Instruction *Create_Instruction(const opcode_t type, int bit_inst, Pipeline * pl);
 };
 
 

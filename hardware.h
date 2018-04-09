@@ -1,14 +1,29 @@
 #ifndef HARDWARE_H_
 #define HARDWARE_H_
 
-#include "instructions.h"
+#include <iostream>
 #include <exception>
 #include <vector>
 #include <queue>
 
+typedef enum { LW, SW, ADD, ADDI, SUB, SUBI, XOR, XORI, OR, ORI, AND, ANDI, MULT, DIV, BEQZ, BNEZ, BLTZ, BGTZ, BLEZ, BGEZ, JUMP, EOP, LWS, SWS, ADDS, SUBS, MULTS, DIVS } opcode_t;
+
+typedef enum { INTEGER_RS, ADD_RS, MULT_RS, LOAD_B } res_station_t;
+
+typedef enum { INTEGER, ADDER, MULTIPLIER, DIVIDER, MEMORY } exe_unit_t;
+
+typedef enum{ ISSUE, EXECUTE, WRITE_RESULT, COMMIT } stage_t;
+
+typedef enum{ R, F } reg_t;
+
+#define UNDEFINED 0xFFFFFFFF //constant used for initialization
+#define NUM_GP_REGISTERS 32
+#define NUM_OPCODES 28
+#define NUM_STAGES 4
+
 class HardwareException : public std::exception{
 	const char * what() const throw(){
-		return "Unit currently busy\n";
+		return "Unit currently busy or full\n";
 	}
 };
 
@@ -45,35 +60,11 @@ public:
 	void alert();
 };
 
-class InstructionMemory{
-	unsigned char * inst_memory;
-public:
-	InstructionMemory(unsigned size);
-	~InstructionMemory();
-
-	unsigned char * get_mem_ptr();
-	Instruction* fetch(unsigned addrPtr);
-	void print(unsigned start_address, unsigned end_address);
-
-	void alert();
-};
-
-class InstructionQueue {
-	unsigned maxSize;
-	std::queue<Instruction*> q;
-
-public:
-	InstructionQueue(unsigned queueSize);
-	void push(Instruction* inst);
-	Instruction * pop();
-	bool isFull();
-
-	void alert();
-};
 
 //---------------------------------------------------------------------------
 class ReorderBuffer{
 	struct Entry {
+		reg_t data_type;
 		unsigned entry;
 		bool busy;
 		bool ready;
@@ -99,12 +90,19 @@ class ReorderBuffer{
 
 public:
 	ReorderBuffer(unsigned rob_size);
+
+	void push(unsigned pc, reg_t data_type, unsigned dest);
 	template <typename T>
-	T get(reg_t r);
+	void checkout(reg_t reg_type, unsigned dest, T value);
+
+	template <typename T>
+	T fetch(reg_t r);
+	void print();
 
 private:
 	std::vector<Entry*> entry_file;
 	void pushHead();
+	bool isFull();
 	unsigned head;
 	unsigned rob_size;
 };

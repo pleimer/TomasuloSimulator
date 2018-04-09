@@ -45,56 +45,7 @@ void ProgramCounter::print(){
 	cout << addrPtr << endl;
 }
 
-InstructionMemory::InstructionMemory(unsigned size){
-	inst_memory = new unsigned char[size];
-}
 
-unsigned char * InstructionMemory::get_mem_ptr(){
-	return inst_memory;
-}
-
-InstructionMemory::~InstructionMemory(){
-	delete[] inst_memory;
-}
-
-Instruction* InstructionMemory::fetch(unsigned addrPtr){
-	//make instruction here
-	int bit_inst = 0;
-	for (int i = 0; i<4; i++){
-		bit_inst = bit_inst | (inst_memory[addrPtr + i] << (3 - i) * 8);
-	}
-	opcode_t opcode = OPCODE(bit_inst);
-	return Instruction_Factory::Get()->Create_Instruction(opcode,bit_inst);
-}
-
-void InstructionMemory::print(unsigned start_address, unsigned end_address){
-	cout << "inst_memory[0x" << hex << setw(8) << setfill('0') << start_address << ":0x" << hex << setw(8) << setfill('0') << end_address << "]" << endl;
-	unsigned i;
-	for (i = start_address; i<end_address; i++){
-		if (i % 4 == 0) cout << "0x" << hex << setw(8) << setfill('0') << i << ": ";
-		cout << hex << setw(2) << setfill('0') << int(inst_memory[i]) << " ";
-		if (i % 4 == 3) cout << endl;
-	}
-}
-
-InstructionQueue::InstructionQueue(unsigned QueueSize){
-	maxSize = QueueSize;
-}
-
-void InstructionQueue::push(Instruction * inst){
-	if(q.size() <= maxSize) q.push(inst);
-	else throw HardwareException();
-}
-
-Instruction * InstructionQueue::pop(){
-		Instruction *i = q.front();
-		q.pop();
-		return i;
-}
-
-bool InstructionQueue::isFull(){
-	return (q.size() == maxSize);
-}
 
 //------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -103,12 +54,75 @@ ReorderBuffer::ReorderBuffer(unsigned rob_size){
 	head = 0;
 	for (int i = 0; i < rob_size; i++){
 		entry_file[i] = new Entry;
+		entry_file[i]->entry = (unsigned) i;
 		entry_file[i]->clear();
 	}
 }
 
+void ReorderBuffer::push(unsigned pc, reg_t data_type, unsigned dest){
+	if (isFull()) throw HardwareException();
+
+	//find first empty slot after last instruction
+	//if entry file is empty, put at first location
+	bool isEmpty = true;
+	unsigned inst_index;
+
+	for (unsigned i = 0; i < rob_size; i++){
+		if (entry_file[i]->busy) isEmpty = false;
+		else {
+			inst_index = i;
+			break;
+		}
+	}
+
+	if (isEmpty) {
+		//store everythinbg in file location 0
+		entry_file[0]->pc = pc;
+		entry_file[0]->data_type = data_type;
+		entry_file[0]->dest = dest;
+	}
+	else {
+		//find empty location after last instruction entered, put data there
+		while (true){
+			if (!entry_file[inst_index]->busy) break;
+			inst_index++;
+			if (inst_index >= rob_size) inst_index = 0;
+		}
+		entry_file[inst_index]->pc = pc;
+		entry_file[inst_index]->data_type = data_type;
+		entry_file[inst_index]->dest = dest;
+	}
+}
+
+template <typename T>
+void ReorderBuffer::checkout(reg_t reg_type, unsigned dest, T value){
+	for (unsigned i = 0; i < rob_size; i++){
+		if ((entry_file[i]->data_type == reg_type) && (entry_file[i]->dest == dest)){
+			switch (reg_type){
+			case R:
+				entry_file[i]->value_i = value;
+				break;
+			case F:
+				entry_file[i]->value_f = value;
+				break;
+			default:
+				break;
+			}
+		}
+	}
+}
+
+bool ReorderBuffer::isFull(){
+	bool isFull = true;
+	for (int i = 0; i < rob_size; i++){
+		if (!entry_file[i]->busy) isFull = false;
+	}
+	return isFull;
+}
+
 void ReorderBuffer::Entry::clear(){
-	entry = UNDEFINED;
+	data_type = (reg_t)UNDEFINED;
+
 	busy = false;
 	ready = false;
 	pc = UNDEFINED;
@@ -120,7 +134,7 @@ void ReorderBuffer::Entry::clear(){
 }
 
 template <typename T>
-T ReorderBuffer::get(reg_t r){
+T ReorderBuffer::fetch(reg_t r){
 	if (!entry_file[head]->ready) throw InstException();
 
 	switch (r){
@@ -150,6 +164,36 @@ T ReorderBuffer::get(reg_t r){
 void ReorderBuffer::pushHead(){
 	head++;
 	if (head >= rob_size) head = 0;
+}
+
+void ReorderBuffer::print(){
+	string busy, ready, state;
+#define PROCESS_VAL(p) #p
+	for (int i = 0; i < rob_size; i++){
+		if (entry_file[i]->busy) busy = "yes";
+		else busy = "no";
+
+		if (entry_file[i]->ready) ready = "yes";
+		else ready = "no";
+
+		state = PROCESS_VAL(entry_file[i]->state);
+
+		switch (entry_file[i]->data_type){
+		case R:
+			cout << setfill(' ') << setw(5) << i << setw(6) << busy << setw(7) << ready
+				<< setw(12) << hex << entry_file[i]->pc << setw(10) << state << setw(6)
+				<< dec << "R" << entry_file[i]->dest << setw(12) << hex << entry_file[i]->value_i << endl;
+			break;
+		case F:
+			cout << setfill(' ') << setw(5) << i << setw(6) << busy << setw(7) << ready
+				<< setw(12) << hex << entry_file[i]->pc << setw(10) << state << setw(6)
+				<< dec << "F" << entry_file[i]->dest << setw(12) << hex << entry_file[i]->value_i << endl;
+			break;
+		default:
+			break;
+		}
+	}
+
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------------

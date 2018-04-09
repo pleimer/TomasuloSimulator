@@ -9,8 +9,7 @@ class Pipeline{
 public:
 	Clock clock;
 
-	InstructionMemory * inst_memory;
-	InstructionQueue * inst_queue;
+	ProgramCounter pc;
 	MemoryUnit * memory_unit;
 
 	Pipeline(unsigned mem_size,
@@ -22,14 +21,14 @@ public:
 		unsigned max_issue);
 
 	void initialize(unsigned base_address);
-	unsigned char * inst_mem_base();
 
 	void cycle();
 
 private:
-	Instruction * instruction;
+	//Instruction * instruction;
 
-	ProgramCounter pc;
+	
+	//std::vector<Instruction *> pipeline;
 
 };
 

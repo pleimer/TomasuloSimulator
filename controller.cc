@@ -1,7 +1,16 @@
 #include "controller.h"
 #include <iomanip>
 
+
 using namespace std;
+
+/*
+
+TO DO: instruction queue made need to throw an exception when empyt for the pipeline to work properly
+
+ figure out how to pop instruction from running_inst<> after it is done commiting
+
+*/
 
 InstructionMemory::InstructionMemory(unsigned size){
 	inst_memory = new unsigned char[size];
@@ -79,10 +88,17 @@ void Controller::execute(){
 
 	try{
 		instruction = inst_queue->pop();
-		instruction->issue();
-		cout << "Issued: ";
-		instruction->print();
-		pl->ROB->print();
+		//put on running_inst stack, then run through that stack and assess() every instruction in it
+		running_inst.push_back(instruction);
+
+		for (unsigned i; i < running_inst.size(); i++){
+			try{
+				running_inst[i]->assess();
+			}
+			catch (InstructionEmpty& ie){
+				running_inst.erase(running_inst.begin() + i);
+			}
+		}
 	}
 	catch (exception &e){
 		cerr << e.what();

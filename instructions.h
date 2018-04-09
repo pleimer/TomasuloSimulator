@@ -15,6 +15,12 @@
 
 #define OPCODE(X) ((opcode_t)((X & 0xFC000000) >> (INST_SIZE-OP_SIZE)))
 
+class InstructionEmpty : public std::exception {//thrown when there is nothing left for instruction to do
+	const char * what() const throw(){
+		return "Instruction empty\n";
+	}
+};
+
 class Instruction { //super class that shows all data types and functions an instruction must have
 
 protected:
@@ -24,6 +30,7 @@ protected:
 	int bit_inst;
 	Pipeline * pl;
 	unsigned pc_init;
+	stage_t stage;
 
 	int immediate;
 	unsigned int RD;
@@ -33,6 +40,9 @@ protected:
 
 public:
 	Instruction(int bit_inst, Pipeline * pl);
+	//Assess() handles the proper, sequential execution of each instruction phase
+	//does not advance to the next stage if exception is thrown
+	void assess();
 
 	//pipeline stages
 	virtual void issue() = 0;

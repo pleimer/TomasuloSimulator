@@ -23,12 +23,60 @@ Instruction::Instruction(int bit_inst, Pipeline * pl){
 	this->pl = pl;
 	this->bit_inst = bit_inst;
 	this->pc_init = pl->pc.get();
+	this->stage = ISSUE;
 	type = OPCODE(bit_inst);
+	
 
 	immediate = UNDEFINED;
 	RD = REG_EMPTY;
 	RS = REG_EMPTY;
 	RT = REG_EMPTY;
+}
+
+
+void Instruction::assess(){
+	switch (stage){
+	case ISSUE:
+		try{
+			issue();
+			stage = EXECUTE;
+		}
+		catch (exception &e){
+			cerr << e.what();
+		}
+		break;
+	case EXECUTE:
+		try{
+			execute();
+			stage = WRITE_RESULT;
+		}
+		catch (exception &e){
+			cerr << e.what();
+		}
+
+		break;
+	case WRITE_RESULT:
+		try{
+			write_result();
+			stage = COMMIT;
+		}
+		catch (exception &e){
+			cerr << e.what();
+		}
+		break;
+	case COMMIT:
+		try{
+			commit();
+			throw InstructionEmpty(); //once commit properly executes, instruction is done
+		}
+		catch (HardwareException &he){
+			cout << "Hardware exception. " << endl;
+		}
+		
+		break;
+	default:
+		break;
+	}
 }
 
 void Instruction::print(){

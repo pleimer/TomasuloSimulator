@@ -35,6 +35,7 @@ class Controller {
 	Pipeline * pl;
 	
 	InstructionQueue * inst_queue;
+	std::vector<Instruction *>  running_inst;
 
 public:
 	InstructionMemory * inst_memory;

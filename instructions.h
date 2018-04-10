@@ -4,7 +4,7 @@
 #include <map>
 #include <iterator>
 #include <iostream>
-#include <string>
+#include <string.h>
 #include "pipeline.h"
 
 

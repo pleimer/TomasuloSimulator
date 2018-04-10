@@ -24,8 +24,12 @@ typedef enum{ R, F } reg_t;
 #define NUM_STAGES 4
 
 class HardwareException : public std::exception{
+	std::string m_msg;
+public:
+	HardwareException(const std::string& obj) :m_msg(obj + " unit busy\n"){}
+	~HardwareException() throw() {}
 	const char * what() const throw(){
-		return "Unit currently busy or full\n";
+		return m_msg.c_str();
 	}
 };
 
@@ -90,10 +94,6 @@ class ReorderBuffer{
 		void clear();
 	};
 
-	struct RAD{
-		unsigned address;
-		unsigned value;
-	};
 
 public:
 	ReorderBuffer(unsigned rob_size);
@@ -101,8 +101,8 @@ public:
 	unsigned push(unsigned pc, reg_t data_type, unsigned dest);
 	void update(unsigned dest, unsigned value);
 
-	template <typename T>
-	T fetch(reg_t r);
+	reg_t getDataType();
+	std::vector<unsigned> fetch();
 	void print();
 
 private:

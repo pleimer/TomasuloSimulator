@@ -93,12 +93,13 @@ void Instruction::assess(){
 }
 
 void Instruction::issue(){
-	cout << "ISSUE" << endl;
-	//pl->ROB->push(pc_init, data_type, RD);
+	cout << type << " ISSUE" << endl;
+	pl->ROB->push(pc_init, data_type, RD);
 	//check and debug code:
 	//send to reservation stations too
 	//unsigned inst_address, unsigned Vj, unsigned Vk, unsigned Qj, unsigned Qk, unsigned dest, unsigned address, 
-	//pl->load_RSU->store(pc_init, UNDEFINED, UNDEFINED, UNDEFINED, UNDEFINED, RD, immediate);
+	pl->adder_RSU->store(pc_init, UNDEFINED, UNDEFINED, UNDEFINED, UNDEFINED, RD, immediate);
+	return;
 }
 
 void Instruction::execute(){
@@ -113,6 +114,18 @@ void Instruction::write_result(){
 
 void Instruction::commit(){
 	cout << "COMMIT" << endl;
+	//registers get data from ROB and ROB pops instruction out for all instructions
+	reg_t data_type = pl->ROB->getDataType();
+	vector<unsigned> reg_items = pl->ROB->fetch();
+	switch (data_type){
+	case R:
+		pl->intregisters->write(reg_items[0], reg_items[1]);
+		break;
+	case F:
+		pl->fpregisters->write(unsigned2float(reg_items[0]), reg_items[1]);
+		break;
+	}
+
 	return;
 }
 
@@ -407,7 +420,7 @@ public:
 	}
 
 	void issue(){ //exceptions are thrown by hardware
-		cout << "ISSUE" << endl;
+		cout << "LWS ISSUE" << endl;
 		rob_entry = pl->ROB->push(pc_init, data_type, RD);
 		//send to reservation stations too
 		//inst_address, Vj, Vk, Qj, Qk, dest, address, 
@@ -415,7 +428,7 @@ public:
 	}
 
 	void execute(){
-		cout << "EXECUTE" << endl;
+		cout << "LWS EXECUTE" << endl;
 		//update address <- EMA
 		//load data from mem
 		int rVal = pl->intregisters->read(RS);
@@ -423,13 +436,13 @@ public:
 	}
 	void write_result(){
 		//update ROB and RS with results
+		cout << "LWS_WR" << endl;
 		int rVal = pl->intregisters->read(RS);
 		unsigned EMA = pl->adr_unit.calc_EMA(immediate, rVal);
 		pl->load_RSU->update(EMA, RSU_entry);
 
-		float result = unsigned2float(pl->memory_unit->read(EMA)); //memory unit doesnt have proper latency for read yet
-		pl->fpregisters->write(result, RD);
-
+		unsigned result = pl->memory_unit->read(EMA); //memory unit doesnt have proper latency for read yet
+		pl->ROB->update(rob_entry, result);
 	}
 	
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new LWS(bit_ins, pl); }

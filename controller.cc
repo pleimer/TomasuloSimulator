@@ -55,7 +55,7 @@ InstructionQueue::InstructionQueue(unsigned QueueSize){
 
 void InstructionQueue::push(Instruction * inst){
 	if (q.size() <= maxSize) q.push(inst);
-	else throw HardwareException();
+	else throw HardwareException("Inst Queue");
 }
 
 Instruction * InstructionQueue::pop(){

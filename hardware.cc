@@ -37,7 +37,7 @@ void Lock::alert(){
 }
 
 bool Lock::isLocked(){
-	if (lock) throw HardwareException();
+	if (lock) throw HardwareException("Locked obj ");
 	lock = true;
 	lock_time = latency;
 }
@@ -78,7 +78,7 @@ ReorderBuffer::ReorderBuffer(unsigned rob_size){
 }
 
 unsigned ReorderBuffer::push(unsigned pc, reg_t data_type, unsigned dest){
-	if (isFull()) throw HardwareException();
+	if (isFull()) throw HardwareException("ROB");
 
 
 	//find first empty slot after last instruction
@@ -120,6 +120,7 @@ unsigned ReorderBuffer::push(unsigned pc, reg_t data_type, unsigned dest){
 
 void ReorderBuffer::update(unsigned dest, unsigned value){
 	entry_file[dest]->value = value;
+	entry_file[dest]->ready = true;
 }
 
 bool ReorderBuffer::isFull(){
@@ -143,18 +144,21 @@ void ReorderBuffer::Entry::clear(){
 
 }
 
+reg_t ReorderBuffer::getDataType(){
+	//gets data type of instruction at head
+	return entry_file[head]->data_type;
+}
 
-/*RAD ReorderBuffer::fetch(){
+vector<unsigned> ReorderBuffer::fetch(){
 	if (!entry_file[head]->ready) throw InstException();
+	vector<unsigned> return_items;
 
-	RAD ret_vals;
-	ret_vals.value = entry_file[head]->value;
-	ret_vals.address = entry_file[head]->dest;
+	return_items.push_back(entry_file[head]->value);
+	return_items.push_back(entry_file[head]->dest);
 	entry_file[head]->clear();
 	pushHead();
-	return &ret_vals;
-		
-}*/
+	return return_items;		
+}
 
 void ReorderBuffer::pushHead(){
 	head++;
@@ -354,11 +358,22 @@ unsigned ReservationStationUnit::store(unsigned inst_address,unsigned Vj, unsign
 	bool isFull = true;
 	for (unsigned i = 0; i < station_file.size(); i++){
 		if (!station_file[i]->busy) {//else see if there is empty slot
-			station_file[i]->store(inst_address, Vj, Vk, Qj, Qk, dest, address);
-			return i; //stored at first open entry
+			isFull = false;
 		}
 	}
-	if (isFull) throw HardwareException();
+
+	if (isFull) throw HardwareException("RS");
+
+	unsigned i = 0;
+	while (i < station_file.size()){
+		if (!station_file[i]->busy){
+			station_file[i]->store(inst_address, Vj, Vk, Qj, Qk, dest, address);
+			break;
+		}
+		i++;
+	}
+
+	return i;
 
 
 	//set entry busy, store given values
@@ -395,16 +410,16 @@ void ReservationStationUnit::checkout(unsigned rob_entry, unsigned data){
 
 void ReservationStationUnit::print(){
 	string busy, pc, vj, vk, qj, qk, dest, address;
-	busy = "no";
-	pc = "-";
-	vj = "-";
-	vk = "-";
-	qj = "-";
-	qk = "-";
-	dest = "-";
-	address = "-";
 	stringstream ss;
 	for (unsigned i = 0; i < station_file.size(); i++){
+		busy = "no";
+		pc = "-";
+		vj = "-";
+		vk = "-";
+		qj = "-";
+		qk = "-";
+		dest = "-";
+		address = "-";
 		if (station_file[i]->busy) busy = "yes";
 
 		if (!(station_file[i]->inst_address == UNDEFINED)) {
@@ -487,7 +502,7 @@ void IntegerFile::assign(int op1, int op2, integer_t op_type, unsigned dest){
 			cerr << "Integer " << e.what();
 		}
 	}
-	if (nonAvailable) throw HardwareException();
+	if (nonAvailable) throw HardwareException("Int");
 }
 
 void IntegerFile::Integer::push_operands(int op1, int op2, integer_t op_type, unsigned dest){
@@ -545,7 +560,7 @@ void AdderFile::assign(int op1, int op2, unsigned dest){
 			cerr << "Adder " << e.what();
 		}
 	}
-	if (nonAvailable) throw HardwareException();
+	if (nonAvailable) throw HardwareException("Adder");
 }
 
 void AdderFile::Adder::push_operands(int op1, int op2, unsigned dest){
@@ -595,7 +610,7 @@ void MultiplierFile::assign(int op1, int op2, unsigned dest){
 			cerr << "Multiplier "<< e.what();
 		}
 	}
-	if (nonAvailable) throw HardwareException();
+	if (nonAvailable) throw HardwareException("Mult");
 }
 
 void MultiplierFile::Multiplier::push_operands(int op1, int op2, unsigned dest){
@@ -645,7 +660,7 @@ void DividerFile::assign(int op1, int op2, unsigned dest){
 			cerr << "Divider " << e.what();
 		}
 	}
-	if (nonAvailable) throw HardwareException();
+	if (nonAvailable) throw HardwareException("Div");
 }
 
 void DividerFile::Divider::push_operands(int op1, int op2, unsigned dest){

@@ -85,28 +85,21 @@ class ReorderBuffer{
 		stage_t stage;
 		unsigned dest;
 		
-		int value_i;
-		int value_f;
+		unsigned value;
 
 		void clear();
 	};
 
-	struct FAD{
-		unsigned address;
-		float value;
-	};
-
 	struct RAD{
 		unsigned address;
-		int value;
+		unsigned value;
 	};
 
 public:
 	ReorderBuffer(unsigned rob_size);
 
-	void push(unsigned pc, reg_t data_type, unsigned dest);
-	template <typename T>
-	void checkout(reg_t reg_type, unsigned dest, T value);
+	unsigned push(unsigned pc, reg_t data_type, unsigned dest);
+	void update(unsigned dest, unsigned value);
 
 	template <typename T>
 	T fetch(reg_t r);
@@ -177,6 +170,7 @@ public:
 
 	MemoryUnit(unsigned char * data_memory, unsigned latency);
 	void write(unsigned data, unsigned addrPtr);
+	unsigned read(unsigned addrPtr);
 };
 
 
@@ -214,7 +208,9 @@ public:
 	
 	//used by issue to store values, dest, references, and addresses - come from reg file
 	//throws exception if no entries are left
-	void store(unsigned inst_address, unsigned Vj, unsigned Vk, unsigned Qj, unsigned Qk, unsigned dest, unsigned address, unsigned entry); 
+	unsigned store(unsigned inst_address, unsigned Vj, unsigned Vk, unsigned Qj, unsigned Qk, unsigned dest, unsigned address); 
+	void update(unsigned address, unsigned entry);
+	void print();
 
 private:
 	std::vector<ReservationStation *> station_file;

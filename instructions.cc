@@ -21,11 +21,20 @@ using namespace std;
 #define R2(X) 	((X & R2_MASK) >> (INST_SIZE - OP_SIZE - REG_REF_SIZE * 2))
 #define R3(X) 	((X & R3_MASK) >> (INST_SIZE - OP_SIZE - REG_REF_SIZE * 3))
 
+/* convert an unsigned into a float */
+inline float unsigned2float(unsigned value){
+	float result;
+	memcpy(&result, &value, sizeof value);
+	return result;
+}
+
 Instruction::Instruction(int bit_inst, Pipeline * pl){
 
 	this->pl = pl;
 	this->bit_inst = bit_inst;
 	this->pc_init = pl->pc.get();
+	this->rob_entry = UNDEFINED;
+	this->RSU_entry = UNDEFINED;
 	this->stage = ISSUE;
 	this->data_type = (reg_t)UNDEFINED;
 	type = OPCODE(bit_inst);
@@ -84,10 +93,12 @@ void Instruction::assess(){
 }
 
 void Instruction::issue(){
-	pl->ROB->push(pc_init, data_type, RD);
-	//check and debug code:
 	cout << "ISSUE" << endl;
+	//pl->ROB->push(pc_init, data_type, RD);
+	//check and debug code:
 	//send to reservation stations too
+	//unsigned inst_address, unsigned Vj, unsigned Vk, unsigned Qj, unsigned Qk, unsigned dest, unsigned address, 
+	//pl->load_RSU->store(pc_init, UNDEFINED, UNDEFINED, UNDEFINED, UNDEFINED, RD, immediate);
 }
 
 void Instruction::execute(){
@@ -125,6 +136,7 @@ public:
 		data_type = R;
 		RD = R1(bit_inst);
 		RS = R2(bit_inst);
+		immediate = IMM_MASK & bit_inst;
 	}
 
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new LW(bit_ins, pl); }
@@ -137,6 +149,7 @@ public:
 		data_type = R;
 		RS = R2(bit_inst);
 		RT = R1(bit_inst);
+		immediate = IMM_MASK & bit_inst;
 	}
 	
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new SW(bit_ins, pl); }
@@ -390,6 +403,33 @@ public:
 		data_type = F;
 		RD = R1(bit_inst);
 		RS = R2(bit_inst);
+		immediate = IMM_MASK & bit_inst;
+	}
+
+	void issue(){ //exceptions are thrown by hardware
+		cout << "ISSUE" << endl;
+		rob_entry = pl->ROB->push(pc_init, data_type, RD);
+		//send to reservation stations too
+		//inst_address, Vj, Vk, Qj, Qk, dest, address, 
+		RSU_entry = pl->load_RSU->store(pc_init, immediate, UNDEFINED, UNDEFINED, UNDEFINED, rob_entry, immediate);
+	}
+
+	void execute(){
+		cout << "EXECUTE" << endl;
+		//update address <- EMA
+		//load data from mem
+		int rVal = pl->intregisters->read(RS);
+		pl->load_RSU->update(pl->adr_unit.calc_EMA(immediate, rVal), RSU_entry);
+	}
+	void write_result(){
+		//update ROB and RS with results
+		int rVal = pl->intregisters->read(RS);
+		unsigned EMA = pl->adr_unit.calc_EMA(immediate, rVal);
+		pl->load_RSU->update(EMA, RSU_entry);
+
+		float result = unsigned2float(pl->memory_unit->read(EMA)); //memory unit doesnt have proper latency for read yet
+		pl->fpregisters->write(result, RD);
+
 	}
 	
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new LWS(bit_ins, pl); }
@@ -402,6 +442,7 @@ public:
 		data_type = F;
 		RT = R1(bit_inst);
 		RS = R2(bit_inst);
+		immediate = IMM_MASK & bit_inst;
 	}
 	
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new SWS(bit_ins, pl); }

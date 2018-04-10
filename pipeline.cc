@@ -14,10 +14,10 @@ Pipeline::Pipeline(unsigned mem_size,
 	intregisters = new IntRegisterUnit(32);
 
 	ROB = new ReorderBuffer(rob_size);
-	int_RSU = new ReservationStationUnit(num_int_res_stations, "INT");
-	adder_RSU = new ReservationStationUnit(num_add_res_stations, "ADD");
-	mult_RSU = new ReservationStationUnit(num_mul_res_stations, "MULT");
-	load_RSU = new ReservationStationUnit(num_int_res_stations, "LOAD");
+	int_RSU = new ReservationStationUnit(num_int_res_stations, "Int");
+	adder_RSU = new ReservationStationUnit(num_add_res_stations, "Add");
+	mult_RSU = new ReservationStationUnit(num_mul_res_stations, "Mult");
+	load_RSU = new ReservationStationUnit(num_load_res_stations, "Load");
 
 }
 

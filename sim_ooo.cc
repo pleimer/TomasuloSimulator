@@ -111,10 +111,11 @@ void sim_ooo::reset(){
 }
 
 int sim_ooo::get_int_register(unsigned reg){
-	return UNDEFINED; //fill here
+	return pipeline->intregisters->read(reg);
 }
 
 void sim_ooo::set_int_register(unsigned reg, int value){
+	return pipeline->intregisters->write(value, reg);
 }
 
 float sim_ooo::get_fp_register(unsigned reg){
@@ -126,7 +127,7 @@ void sim_ooo::set_fp_register(unsigned reg, float value){
 }
 
 unsigned sim_ooo::get_pending_int_register(unsigned reg){
-	return UNDEFINED; //fill here
+	return  pipeline->intregisters->getDestination(reg);
 }
 
 unsigned sim_ooo::get_pending_fp_register(unsigned reg){
@@ -178,7 +179,7 @@ void sim_ooo::print_registers(){
 void sim_ooo::print_rob(){
 	cout << "REORDER BUFFER" << endl; 
 	cout << setfill(' ') << setw(5) << "Entry" << setw(6) << "Busy" << setw(7) << "Ready" << setw(12) << "PC" << setw(10) << "State" << setw(6) << "Dest" << setw(12) << "Value" << endl;
-	
+	pipeline->ROB->print();
 	//fill here
 	
 	cout << endl;
@@ -188,7 +189,10 @@ void sim_ooo::print_reservation_stations(){
 	cout << "RESERVATION STATIONS" << endl;
 	cout  << setfill(' ');
 	cout << setw(7) << "Name" << setw(6) << "Busy" << setw(12) << "PC" << setw(12) << "Vj" << setw(12) << "Vk" << setw(6) << "Qj" << setw(6) << "Qk" << setw(6) << "Dest" << setw(12) << "Address" << endl; 
-	
+	pipeline->int_RSU->print();
+	pipeline->load_RSU->print();
+	pipeline->adder_RSU->print();
+	pipeline->mult_RSU->print();
 	// fill here
 	
 	cout << endl;

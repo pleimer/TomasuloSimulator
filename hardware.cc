@@ -5,6 +5,7 @@ be the issue
 
 ReservationStations have not been tested - could be source of problem later on
 
+
 IMPLEMENT: On HardwareExceptions, show info on what unit the exception occurred
 */
 
@@ -22,6 +23,8 @@ inline void unsigned2char(unsigned value, unsigned char *buffer){
 	buffer[2] = (value >> 16) & 0xFF;
 	buffer[3] = (value >> 24) & 0xFF;
 }
+
+
 
 Lock::Lock(){
 	this->lock_time = 0;
@@ -74,7 +77,7 @@ ReorderBuffer::ReorderBuffer(unsigned rob_size){
 	
 }
 
-void ReorderBuffer::push(unsigned pc, reg_t data_type, unsigned dest){
+unsigned ReorderBuffer::push(unsigned pc, reg_t data_type, unsigned dest){
 	if (isFull()) throw HardwareException();
 
 
@@ -97,7 +100,7 @@ void ReorderBuffer::push(unsigned pc, reg_t data_type, unsigned dest){
 		entry_file[0]->data_type = data_type;
 		entry_file[0]->dest = dest;
 		entry_file[0]->busy = true;
-
+		return 0;
 	}
 	else {
 		//find empty location after last instruction entered, put data there
@@ -112,24 +115,11 @@ void ReorderBuffer::push(unsigned pc, reg_t data_type, unsigned dest){
 		entry_file[inst_index]->dest = dest;
 		entry_file[inst_index]->busy = true;
 	}
+	return inst_index;
 }
 
-template <typename T>
-void ReorderBuffer::checkout(reg_t reg_type, unsigned dest, T value){
-	for (unsigned i = 0; i < rob_size; i++){
-		if ((entry_file[i]->data_type == reg_type) && (entry_file[i]->dest == dest)){
-			switch (reg_type){
-			case R:
-				entry_file[i]->value_i = value;
-				break;
-			case F:
-				entry_file[i]->value_f = value;
-				break;
-			default:
-				break;
-			}
-		}
-	}
+void ReorderBuffer::update(unsigned dest, unsigned value){
+	entry_file[dest]->value = value;
 }
 
 bool ReorderBuffer::isFull(){
@@ -149,37 +139,22 @@ void ReorderBuffer::Entry::clear(){
 	stage = (stage_t)UNDEFINED;
 	dest = UNDEFINED;
 
-	value_i = UNDEFINED;
-	value_f = UNDEFINED;
+	value = UNDEFINED;
+
 }
 
-template <typename T>
-T ReorderBuffer::fetch(reg_t r){
+
+/*RAD ReorderBuffer::fetch(){
 	if (!entry_file[head]->ready) throw InstException();
 
-	switch (r){
-	case R:{
-		RAD ret_vals;
-		ret_vals.value = entry_file[head]->value_i;
-		ret_vals.address = entry_file[head]->dest;
-		entry_file[head]->clear();
-		pushHead();
-		return &ret_vals;
-		break;
-	}
-	case F: {
-		FAD ret_vals;
-		ret_vals.value = entry_file[head]->value_f;
-		ret_vals.address = entry_file[head]->dest;
-		entry_file[head]->clear();
-		pushHead();
-		return &ret_vals;
-		break;
-	}
-	default:
-		break;
-	}
-}
+	RAD ret_vals;
+	ret_vals.value = entry_file[head]->value;
+	ret_vals.address = entry_file[head]->dest;
+	entry_file[head]->clear();
+	pushHead();
+	return &ret_vals;
+		
+}*/
 
 void ReorderBuffer::pushHead(){
 	head++;
@@ -220,18 +195,18 @@ void ReorderBuffer::print(){
 
 		switch (entry_file[i]->data_type){
 		case R:
-			if (entry_file[i]->value_i == UNDEFINED) value = "-";
+			if (entry_file[i]->value == UNDEFINED) value = "-";
 			else {
-				ss << entry_file[i]->value_i;
+				ss << entry_file[i]->value;
 				value = ss.str();
 			}
 			reg = "R";
 
 			break;
 		case F:
-			if (entry_file[i]->value_f == UNDEFINED) value = "-";
+			if (entry_file[i]->value == UNDEFINED) value = "-";
 			else {
-				ss << entry_file[i]->value_f;
+				ss << entry_file[i]->value;
 				value = ss.str();
 			}
 			reg = "F";
@@ -335,6 +310,11 @@ void MemoryUnit::write(unsigned data, unsigned addrPtr){
 	unsigned2char(data, data_memory + addrPtr); //already implemented
 }
 
+unsigned MemoryUnit::read(unsigned addrPtr){
+	isLocked();
+	return data_memory[addrPtr];
+}
+
 
 ReservationStationUnit::ReservationStationUnit(unsigned num_stations, string name){
 	stringstream ss;
@@ -347,7 +327,7 @@ ReservationStationUnit::ReservationStationUnit(unsigned num_stations, string nam
 		//name instruction
 		ss.str("");
 		ss.clear();
-		ss << i;
+		ss << (i + 1);
 		station_file[i]->name = name + ss.str();
 	}
 }
@@ -367,21 +347,26 @@ void ReservationStationUnit::ReservationStation::clear(){
 	address = UNDEFINED;
 }
 
-void ReservationStationUnit::store(unsigned inst_address,unsigned Vj, unsigned Vk, unsigned Qj, unsigned Qk, unsigned dest, unsigned address, unsigned entry){
+unsigned ReservationStationUnit::store(unsigned inst_address,unsigned Vj, unsigned Vk, unsigned Qj, unsigned Qk, unsigned dest, unsigned address){
+	//need mechanism instruction can use to writing into an already filled RS without this function making a new slot
+	//how about if the instruction address in instruction memory is the same?
 	//if full, throw hardware exception
 	bool isFull = true;
 	for (unsigned i = 0; i < station_file.size(); i++){
-		if (!station_file[i]->busy) isFull = false;
+		if (!station_file[i]->busy) {//else see if there is empty slot
+			station_file[i]->store(inst_address, Vj, Vk, Qj, Qk, dest, address);
+			return i; //stored at first open entry
+		}
 	}
 	if (isFull) throw HardwareException();
 
 
 	//set entry busy, store given values
 	//caller responsible for setting undefined values
-	station_file[entry]->store(inst_address, Vj, Vk, Qj, Qk, dest, address);
 }
 
 void ReservationStationUnit::ReservationStation::store(unsigned inst_address, unsigned Vj, unsigned Vk, unsigned Qj, unsigned Qk, unsigned dest, unsigned address){
+	this->busy = true;
 	this->inst_address = inst_address;
 	this->Vj = Vj;
 	this->Vk = Vk;
@@ -389,6 +374,10 @@ void ReservationStationUnit::ReservationStation::store(unsigned inst_address, un
 	this->Qk = Qk;
 	this->dest = dest;
 	this->address = address;
+}
+
+void ReservationStationUnit::update(unsigned address, unsigned entry){
+	station_file[entry]->address = address;
 }
 
 void ReservationStationUnit::checkout(unsigned rob_entry, unsigned data){
@@ -401,6 +390,75 @@ void ReservationStationUnit::checkout(unsigned rob_entry, unsigned data){
 			station_file[i]->Qk = UNDEFINED;
 			station_file[i]->Vk = data;
 		}
+	}
+}
+
+void ReservationStationUnit::print(){
+	string busy, pc, vj, vk, qj, qk, dest, address;
+	busy = "no";
+	pc = "-";
+	vj = "-";
+	vk = "-";
+	qj = "-";
+	qk = "-";
+	dest = "-";
+	address = "-";
+	stringstream ss;
+	for (unsigned i = 0; i < station_file.size(); i++){
+		if (station_file[i]->busy) busy = "yes";
+
+		if (!(station_file[i]->inst_address == UNDEFINED)) {
+			ss.str("");
+			ss.clear();
+			ss << "0x" << setw(8) << setfill('0') << hex << station_file[i]->inst_address;
+			pc = ss.str();
+		}
+
+		if (!(station_file[i]->Vj == UNDEFINED)) {
+			ss.str("");
+			ss.clear();
+			ss << "0x" << setw(8) << setfill('0')  << hex << station_file[i]->Vj;
+			vj = ss.str();
+		}
+
+		if (!(station_file[i]->Vk == UNDEFINED)) {
+			ss.str("");
+			ss.clear();
+			ss << "0x" << setw(8) << setfill('0') << hex << station_file[i]->Vk;
+			vk = ss.str();
+		}
+
+		if (!(station_file[i]->Qj == UNDEFINED)) {
+			ss.str("");
+			ss.clear();
+			ss << "0x" << setw(8) << setfill('0') << hex << station_file[i]->Qj;
+			qj = ss.str();
+		}
+
+		if (!(station_file[i]->Qk == UNDEFINED)) {
+			ss.str("");
+			ss.clear();
+			ss << "0x" << setw(8) << setfill('0') << hex << station_file[i]->Qk;
+			qk = ss.str();
+		}
+
+		if (!(station_file[i]->dest == UNDEFINED)) {
+			ss.str("");
+			ss.clear();
+			ss << station_file[i]->dest;
+			dest = ss.str();
+		}
+
+		if (!(station_file[i]->address == UNDEFINED)) {
+			ss.str("");
+			ss.clear();
+			ss << setw(8) << setfill('0') << hex << station_file[i]->address;
+			address = "0x" + ss.str();
+		}
+
+		cout << setw(7) << station_file[i]->name << setw(6) << busy << setw(12) << pc;
+		cout << setw(12) << vj << setw(12) << vk << setw(6) << qj << setw(6) << qk;
+		cout <<setw(6) << dest <<setw(12)<< address << endl;
 	}
 }
 

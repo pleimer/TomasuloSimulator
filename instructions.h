@@ -30,6 +30,9 @@ protected:
 	int bit_inst;
 	Pipeline * pl;
 	unsigned pc_init;
+	unsigned rob_entry;
+	unsigned RSU_entry;
+
 	reg_t data_type;
 	stage_t stage;
 

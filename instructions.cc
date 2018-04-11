@@ -21,6 +21,12 @@ using namespace std;
 #define R2(X) 	((X & R2_MASK) >> (INST_SIZE - OP_SIZE - REG_REF_SIZE * 2))
 #define R3(X) 	((X & R3_MASK) >> (INST_SIZE - OP_SIZE - REG_REF_SIZE * 3))
 
+inline unsigned float2unsigned(float value){
+	unsigned result;
+	memcpy(&result, &value, sizeof value);
+	return result;
+}
+
 /* convert an unsigned into a float */
 inline float unsigned2float(unsigned value){
 	float result;
@@ -98,21 +104,20 @@ void Instruction::assess(){
 
 void Instruction::issue(){
 	cout << type << " ISSUE" << endl;
+	//send info to ROB and RS
 	rob_entry = pl->ROB->push(pc_init, data_type, RD);
-	//check and debug code:
-	//send to reservation stations too
-	//unsigned inst_address, unsigned Vj, unsigned Vk, unsigned Qj, unsigned Qk, unsigned dest, unsigned address, 
 	pl->adder_RSU->store(pc_init, UNDEFINED, UNDEFINED, UNDEFINED, UNDEFINED, RD, immediate);
+	cout << "SUCCESS" << endl;
 	return;
 }
 
 void Instruction::execute(){
-	cout << "EXECUTE " << endl;
+	cout << type << " EXECUTE " << endl;
 	return;
 }
 
 void Instruction::write_result(){
-	cout << "WRITE_RESULT" << endl;
+	cout << type << " WRITE_RESULT" << endl;
 	return;
 }
 
@@ -132,8 +137,6 @@ void Instruction::commit(){
 		pl->fpregisters->write(unsigned2float(reg_items[0]), reg_items[1]);
 		break;
 	}
-
-
 	cout << "SUCCESS" << endl;
 	return;
 }
@@ -478,6 +481,7 @@ public:
 };
 
 class ADDS : public Instruction {
+
 public:
 	ADDS(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
 		type = "ADDS";
@@ -485,6 +489,36 @@ public:
 		RD = R1(bit_inst);
 		RS = R2(bit_inst);
 		RT = R3(bit_inst);
+	}
+
+	void issue(){
+		cout << "ADDS ISSUE" << endl;
+		//send info to ROB and RS
+		rob_entry = pl->ROB->push(pc_init, data_type, RD);
+		pl->adder_RSU->store(pc_init, UNDEFINED, UNDEFINED, UNDEFINED, UNDEFINED, RD, immediate);
+		cout << "SUCCESS" << endl;
+	}
+
+	void execute(){
+		//read operands (data exception thrown if not ready)"
+		float op1 = pl->fpregisters->read(RS);
+		float op2 = pl->fpregisters->read(RT);
+
+		//send to execution unit
+		pl->adder_file->assign(op1, op2, rob_entry);
+
+	}
+
+	void write_result(){
+		//get result from execution unit
+		float result = pl->adder_file->checkout(rob_entry);
+
+		//checkout result value at RS
+		pl->adder_RSU->checkout(rob_entry, result);
+
+		//send result to ROB
+		pl->ROB->update(rob_entry, float2unsigned(result));
+
 	}
 	
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new ADDS(bit_ins, pl); }

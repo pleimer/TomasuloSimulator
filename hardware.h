@@ -33,6 +33,13 @@ public:
 	}
 };
 
+class DataException : public std::exception{
+public:
+	const char * what() const throw(){
+		return "Data invalid\n";
+	}
+};
+
 class InstException : public std::exception{
 	const char * what() const throw(){
 		return "Instruction not ready\n";

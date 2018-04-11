@@ -249,7 +249,9 @@ FPRegisterUnit::~FPRegisterUnit(){
 }
 
 float FPRegisterUnit::read(unsigned address){
-	return register_file[address]->data;
+	float data = register_file[address]->data;
+	if (data == UNDEFINED) throw DataException();
+	return data;
 }
 
 void FPRegisterUnit::write(float data, unsigned address){
@@ -286,7 +288,9 @@ IntRegisterUnit::~IntRegisterUnit(){
 }
 
 int IntRegisterUnit::read(unsigned address){
-	return register_file[address]->data;
+	int data = register_file[address]->data;
+	if (data == UNDEFINED) throw DataException();
+	return data;
 }
 
 void IntRegisterUnit::write(int data, unsigned address){

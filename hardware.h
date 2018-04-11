@@ -42,6 +42,7 @@ class InstException : public std::exception{
 class Lock{ //locks structures that have a certain amount of latency associated with them
 protected:
 	unsigned latency;
+	void setLock();
 
 private:
 	unsigned lock_time;
@@ -50,11 +51,10 @@ private:
 	
 public:
 	Lock();
-	void setHardLock();
-	void isHardLock();
-	void free();
 	void alert();
 	bool isLocked();
+	void free();
+	bool countLock();
 	bool isProcessing();
 };
 
@@ -71,15 +71,11 @@ public:
 	void alert();
 };
 
-class AddressUnit : public Lock{ //no structural hazard on this, but will need to account for RAW in control logic
-
+class AddressUnit : public Lock{ 
+//lock set on call	
+//control unit responsible for releasing lock
 public:
-	//for EMA calc, should wait until value exists at that register location, maybe this could be done by control unit
-	// This would account for RAW
-
 	unsigned calc_EMA(int imm, int reg_val);
-
-	//for getting immediate, just returns the immmediate value of the most recent instruction issued
 };
 
 

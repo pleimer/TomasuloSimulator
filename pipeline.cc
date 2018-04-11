@@ -24,7 +24,7 @@ Pipeline::Pipeline(unsigned mem_size,
 void Pipeline::Clock::posedge(Pipeline& pipeline){
 	//alert all hardware this is start of new cycle
 	pipeline.memory_unit->alert();
-	pipeline.adr_unit.alert();
+	//pipeline.adr_unit.alert();
 }
 
 void Pipeline::initialize(unsigned base_address){

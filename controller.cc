@@ -92,12 +92,16 @@ void Controller::execute(){
 		//put on running_inst stack, then run through that stack and assess() every instruction in it
 		running_inst.push_back(instruction);
 
-		for (unsigned i; i < running_inst.size(); i++){
+		for (unsigned i=0; i < running_inst.size(); i++){
 			try{
+				cout << "Instruction being assessed: ";
+				running_inst[i]->print();
 				running_inst[i]->assess();
 			}
 			catch (InstructionEmpty& ie){
+				cout << "deleted" << endl;
 				running_inst.erase(running_inst.begin() + i);
+				i--;
 			}
 		}
 

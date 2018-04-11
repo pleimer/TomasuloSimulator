@@ -117,7 +117,10 @@ void Instruction::write_result(){
 }
 
 void Instruction::commit(){
-	cout << "COMMIT" << endl;
+	cout << type << " COMMIT" << endl;
+	//free all hardware units here
+	pl->adr_unit.free();
+	
 	//registers get data from ROB and ROB pops instruction out for all instructions
 	reg_t data_type = pl->ROB->getDataType();
 	vector<unsigned> reg_items = pl->ROB->fetch();
@@ -130,6 +133,8 @@ void Instruction::commit(){
 		break;
 	}
 
+
+	cout << "SUCCESS" << endl;
 	return;
 }
 
@@ -430,6 +435,7 @@ public:
 		//send to reservation stations too
 		//inst_address, Vj, Vk, Qj, Qk, dest, address, 
 		RSU_entry = pl->load_RSU->store(pc_init, immediate, UNDEFINED, UNDEFINED, UNDEFINED, rob_entry, immediate);
+		cout << "SUCCESS" << endl;
 	}
 
 	void execute(){
@@ -438,8 +444,9 @@ public:
 		//load data from mem
 		int rVal = pl->intregisters->read(RS);
 		EMA = pl->adr_unit.calc_EMA(immediate, rVal);
-		pl->adr_unit.setHardLock();
+
 		pl->load_RSU->update(EMA, RSU_entry);
+		cout << "SUCCESS" << endl;
 	}
 
 	void write_result(){
@@ -451,7 +458,7 @@ public:
 		unsigned result = pl->memory_unit->readInt(EMA); 
 		pl->ROB->update(rob_entry, result);
 
-		pl->adr_unit.free();
+		cout << "SUCCESS" << endl;
 	}
 	
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new LWS(bit_ins, pl); }

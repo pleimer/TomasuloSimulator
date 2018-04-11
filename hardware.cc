@@ -37,33 +37,38 @@ Lock::Lock(){
 	this->first_call = true;
 }
 
-void Lock::setHardLock(){
-	lock = true;
-}
-
-void Lock::isHardLock(){
-	if (lock) throw HardwareException("Hard lock on");
-}
-
-void Lock::free(){
-	lock = false;
-}
 
 void Lock::alert(){
 	if (lock_time > 0) lock_time--;
 	if (lock_time <= 0) lock = false;
 }
 
+bool Lock::isLocked(){
+	if (lock) throw HardwareException("Locked obj");
+}
+
+void Lock::setLock(){
+	lock = true;
+}
+
+void Lock::free(){
+	lock = false;
+}
+
 bool Lock::isProcessing(){
 	if (first_call){
 		first_call = false;
-		lock_time = latency - 1;
-		throw HardwareException("First Call: locked obj");
+		lock = true;
+		lock_time = latency - 1; //excpetion thrown here counts as one
 	}
-	isLocked();
+	
+	if (lock && (lock_time > 0)) {
+		throw HardwareException("Processing: ");
+		lock = true;
+	}
 }
 
-bool Lock::isLocked(){
+bool Lock::countLock(){
 	if (lock) throw HardwareException("Locked obj ");
 	lock = true;
 	lock_time = latency;
@@ -87,8 +92,10 @@ void ProgramCounter::print(){
 }
 
 
+
 unsigned AddressUnit::calc_EMA(int imm, int reg_val){
-	isHardLock();
+	isLocked();
+	setLock();
 	return imm + reg_val;
 }
 
@@ -308,21 +315,22 @@ void IntRegisterUnit::reset(){
 
 MemoryUnit::MemoryUnit(unsigned char * data_memory, unsigned latency){
 	this->data_memory = data_memory;
-	this->latency = latency + 1;
+	this->latency = latency;
 }
 
 void MemoryUnit::write(unsigned data, unsigned addrPtr){
-	isLocked();
+	countLock();
 	unsigned2char(data, data_memory + addrPtr); //already implemented
 }
 
 unsigned MemoryUnit::readByte(unsigned addrPtr){
-	isProcessing();
+	countLock();
 	return data_memory[addrPtr];
 }
 
 unsigned MemoryUnit::readInt(unsigned addrPtr){
 	isProcessing();
+	//countLock();
 	return char2unsigned(&data_memory[addrPtr]);
 }
 
@@ -513,7 +521,7 @@ void IntegerFile::assign(int op1, int op2, integer_t op_type, unsigned dest){
 }
 
 void IntegerFile::Integer::push_operands(int op1, int op2, integer_t op_type, unsigned dest){
-	isLocked();
+	countLock();
 	this->op1 = op1;
 	this->op2 = op2;
 	this->op_type = op_type;
@@ -529,7 +537,7 @@ int IntegerFile::checkout(unsigned rob_dest){
 }
 
 int IntegerFile::Integer::operate(){
-		isLocked();
+		countLock();
 		switch (op_type){
 		case AD: return op1 + op2;
 		case S: return op1 - op2;
@@ -571,7 +579,7 @@ void AdderFile::assign(int op1, int op2, unsigned dest){
 }
 
 void AdderFile::Adder::push_operands(int op1, int op2, unsigned dest){
-	isLocked();
+	countLock();
 	this->op1 = op1;
 	this->op2 = op2;
 	this->dest = dest;
@@ -586,7 +594,7 @@ float AdderFile::checkout(unsigned rob_dest){
 }
 
 float AdderFile::Adder::operate(){
-	isLocked();
+	countLock();
 	return op1 + op2;
 }
 
@@ -621,7 +629,7 @@ void MultiplierFile::assign(int op1, int op2, unsigned dest){
 }
 
 void MultiplierFile::Multiplier::push_operands(int op1, int op2, unsigned dest){
-	isLocked();
+	countLock();
 	this->op1 = op1;
 	this->op2 = op2;
 	this->dest = dest;
@@ -636,7 +644,7 @@ float MultiplierFile::checkout(unsigned rob_dest){
 }
 
 float MultiplierFile::Multiplier::operate(){
-	isLocked();
+	countLock();
 	return op1 * op2;
 }
 
@@ -671,7 +679,7 @@ void DividerFile::assign(int op1, int op2, unsigned dest){
 }
 
 void DividerFile::Divider::push_operands(int op1, int op2, unsigned dest){
-	isLocked();
+	countLock();
 	this->op1 = op1;
 	this->op2 = op2;
 	this->dest = dest;
@@ -686,7 +694,7 @@ float DividerFile::checkout(unsigned rob_dest){
 }
 
 float DividerFile::Divider::operate(){
-	isLocked();
+	countLock();
 	return op1 / op2;
 }
 

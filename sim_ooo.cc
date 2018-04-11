@@ -206,6 +206,8 @@ void sim_ooo::print_pending_instructions(){
 }
 
 void sim_ooo::print_log(){
+
+
 }
 
 float sim_ooo::get_IPC(){

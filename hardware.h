@@ -45,12 +45,17 @@ protected:
 
 private:
 	unsigned lock_time;
+	bool first_call;
 	bool lock;
-
+	
 public:
 	Lock();
+	void setHardLock();
+	void isHardLock();
+	void free();
 	void alert();
 	bool isLocked();
+	bool isProcessing();
 };
 
 
@@ -66,7 +71,7 @@ public:
 	void alert();
 };
 
-class AddressUnit{ //no structural hazard on this, but will need to account for RAW in control logic
+class AddressUnit : public Lock{ //no structural hazard on this, but will need to account for RAW in control logic
 
 public:
 	//for EMA calc, should wait until value exists at that register location, maybe this could be done by control unit
@@ -100,6 +105,7 @@ public:
 
 	unsigned push(unsigned pc, reg_t data_type, unsigned dest);
 	void update(unsigned dest, unsigned value);
+	void updateState(unsigned entry, stage_t stage);
 
 	reg_t getDataType();
 	std::vector<unsigned> fetch();
@@ -170,7 +176,8 @@ public:
 
 	MemoryUnit(unsigned char * data_memory, unsigned latency);
 	void write(unsigned data, unsigned addrPtr);
-	unsigned read(unsigned addrPtr);
+	unsigned readByte(unsigned addrPtr);
+	unsigned readInt(unsigned addrPtr);
 };
 
 

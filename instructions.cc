@@ -52,6 +52,7 @@ void Instruction::assess(){
 	case ISSUE:
 		try{
 			issue();
+			pl->ROB->updateState(rob_entry, stage);
 			stage = EXECUTE;
 		}
 		catch (exception &e){
@@ -61,6 +62,7 @@ void Instruction::assess(){
 	case EXECUTE:
 		try{
 			execute();
+			pl->ROB->updateState(rob_entry, stage);
 			stage = WRITE_RESULT;
 		}
 		catch (exception &e){
@@ -70,7 +72,8 @@ void Instruction::assess(){
 		break;
 	case WRITE_RESULT:
 		try{
-			write_result();
+			write_result(); 
+			pl->ROB->updateState(rob_entry, stage);
 			stage = COMMIT;
 		}
 		catch (exception &e){
@@ -80,6 +83,7 @@ void Instruction::assess(){
 	case COMMIT:
 		try{
 			commit();
+			pl->ROB->updateState(rob_entry, stage);
 			throw InstructionEmpty(); //once commit properly executes, instruction is done
 		}
 		catch (HardwareException &he){
@@ -94,7 +98,7 @@ void Instruction::assess(){
 
 void Instruction::issue(){
 	cout << type << " ISSUE" << endl;
-	pl->ROB->push(pc_init, data_type, RD);
+	rob_entry = pl->ROB->push(pc_init, data_type, RD);
 	//check and debug code:
 	//send to reservation stations too
 	//unsigned inst_address, unsigned Vj, unsigned Vk, unsigned Qj, unsigned Qk, unsigned dest, unsigned address, 
@@ -410,6 +414,7 @@ public:
 };
 
 class LWS : public Instruction {
+	unsigned EMA;
 public:
 	LWS(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
 		type = "LWS";
@@ -432,17 +437,21 @@ public:
 		//update address <- EMA
 		//load data from mem
 		int rVal = pl->intregisters->read(RS);
-		pl->load_RSU->update(pl->adr_unit.calc_EMA(immediate, rVal), RSU_entry);
+		EMA = pl->adr_unit.calc_EMA(immediate, rVal);
+		pl->adr_unit.setHardLock();
+		pl->load_RSU->update(EMA, RSU_entry);
 	}
+
 	void write_result(){
 		//update ROB and RS with results
 		cout << "LWS_WR" << endl;
-		int rVal = pl->intregisters->read(RS);
-		unsigned EMA = pl->adr_unit.calc_EMA(immediate, rVal);
 		pl->load_RSU->update(EMA, RSU_entry);
+		pl->load_RSU->clear(RSU_entry);
 
-		unsigned result = pl->memory_unit->read(EMA); //memory unit doesnt have proper latency for read yet
+		unsigned result = pl->memory_unit->readInt(EMA); 
 		pl->ROB->update(rob_entry, result);
+
+		pl->adr_unit.free();
 	}
 	
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new LWS(bit_ins, pl); }

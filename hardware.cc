@@ -24,16 +24,43 @@ inline void unsigned2char(unsigned value, unsigned char *buffer){
 	buffer[3] = (value >> 24) & 0xFF;
 }
 
+/* convert array of char into integer - little indian */
+inline unsigned char2unsigned(unsigned char *buffer){
+	return buffer[0] + (buffer[1] << 8) + (buffer[2] << 16) + (buffer[3] << 24);
+}
+
 
 
 Lock::Lock(){
 	this->lock_time = 0;
 	this->lock = false;
+	this->first_call = true;
+}
+
+void Lock::setHardLock(){
+	lock = true;
+}
+
+void Lock::isHardLock(){
+	if (lock) throw HardwareException("Hard lock on");
+}
+
+void Lock::free(){
+	lock = false;
 }
 
 void Lock::alert(){
 	if (lock_time > 0) lock_time--;
-	if (lock_time == 0) lock = false;
+	if (lock_time <= 0) lock = false;
+}
+
+bool Lock::isProcessing(){
+	if (first_call){
+		first_call = false;
+		lock_time = latency - 1;
+		throw HardwareException("First Call: locked obj");
+	}
+	isLocked();
 }
 
 bool Lock::isLocked(){
@@ -56,12 +83,12 @@ unsigned ProgramCounter::get(){
 }
 
 void ProgramCounter::print(){
-	cout << addrPtr << endl;
+	std::cout << addrPtr << endl;
 }
 
 
 unsigned AddressUnit::calc_EMA(int imm, int reg_val){
-
+	isHardLock();
 	return imm + reg_val;
 }
 
@@ -80,47 +107,31 @@ ReorderBuffer::ReorderBuffer(unsigned rob_size){
 unsigned ReorderBuffer::push(unsigned pc, reg_t data_type, unsigned dest){
 	if (isFull()) throw HardwareException("ROB");
 
-
 	//find first empty slot after last instruction
 	//if entry file is empty, put at first location
-	bool isEmpty = true;
-	unsigned inst_index;
+	unsigned insert_index = head;
 
-	for (unsigned i = 0; i < rob_size; i++){
-		if (entry_file[i]->busy) isEmpty = false;
-		else {
-			inst_index = i;
+	while (true){
+		if (!entry_file[insert_index]->busy){
+			entry_file[insert_index]->pc = pc;
+			entry_file[insert_index]->data_type = data_type;
+			entry_file[insert_index]->dest = dest;
+			entry_file[insert_index]->busy = true;
 			break;
 		}
+		insert_index++;
+		if (insert_index >= entry_file.size()) insert_index = 0;
 	}
-
-	if (isEmpty) {
-		//store everythinbg in file location 0
-		entry_file[0]->pc = pc;
-		entry_file[0]->data_type = data_type;
-		entry_file[0]->dest = dest;
-		entry_file[0]->busy = true;
-		return 0;
-	}
-	else {
-		//find empty location after last instruction entered, put data there
-		while (true){
-			if (!entry_file[inst_index]->busy) break;
-			inst_index++;
-			if (inst_index >= rob_size) inst_index = 0;
-		}
-
-		entry_file[inst_index]->pc = pc;
-		entry_file[inst_index]->data_type = data_type;
-		entry_file[inst_index]->dest = dest;
-		entry_file[inst_index]->busy = true;
-	}
-	return inst_index;
+	return insert_index;
 }
 
 void ReorderBuffer::update(unsigned dest, unsigned value){
 	entry_file[dest]->value = value;
 	entry_file[dest]->ready = true;
+}
+
+void ReorderBuffer::updateState(unsigned entry, stage_t stage){
+	entry_file[entry]->stage = stage;
 }
 
 bool ReorderBuffer::isFull(){
@@ -137,7 +148,7 @@ void ReorderBuffer::Entry::clear(){
 	busy = false;
 	ready = false;
 	pc = UNDEFINED;
-	stage = (stage_t)UNDEFINED;
+	stage = (stage_t) UNDEFINED;
 	dest = UNDEFINED;
 
 	value = UNDEFINED;
@@ -169,59 +180,50 @@ void ReorderBuffer::print(){
 	string busy, ready, pc, stage, dest, value, reg;
 	stringstream ss;
 
-	for (int i = 0; i < entry_file.size();i++){
+	for (unsigned i = 0; i < entry_file.size();i++){
+		busy = "no";
+		ready = "no";
+		pc = "-";
+		stage = "-";
+		dest = "-";
+		value = "-";
 		reg = " ";
 
 		if (entry_file[i]->busy) busy = "yes";
-		else busy = "no";
 
 		if (entry_file[i]->ready) ready = "yes";
-		else ready = "no";
 
-		if (entry_file[i]->pc == UNDEFINED) pc = "-";
-		else {
+		if (!(entry_file[i]->pc == UNDEFINED)){
 			ss.str("");
 			ss.clear();
-			ss << entry_file[i]->pc;
+			ss << "0x" << setw(8) << setfill('0') << hex << entry_file[i]->pc;
 			pc = ss.str();
 		}	
 
-		//if (entry_file[i]->stage == UNDEFINED) stage = "-";
-		stage = "-";
+		if (entry_file[i]->stage == ISSUE) stage = "ISSUE";
+		else if (entry_file[i]->stage == EXECUTE) stage = "EXE";
+		else if (entry_file[i]->stage == WRITE_RESULT) stage = "WR";
+		//else if (entry_file[i]->stage == COMMIT) stage = ""
 
-		if (entry_file[i]->dest == UNDEFINED) dest = "-";
-		else {
+		if (!(entry_file[i]->dest == UNDEFINED)){
 			ss.str(""); //don't forget to clear the string stream!!!
 			ss.clear();
 			ss << entry_file[i]->dest;
 			dest = ss.str();
+
+			if (entry_file[i]->data_type == R) reg = "R";
+			else reg = "F";
 		}
 
-		switch (entry_file[i]->data_type){
-		case R:
-			if (entry_file[i]->value == UNDEFINED) value = "-";
-			else {
-				ss << entry_file[i]->value;
-				value = ss.str();
-			}
-			reg = "R";
-
-			break;
-		case F:
-			if (entry_file[i]->value == UNDEFINED) value = "-";
-			else {
-				ss << entry_file[i]->value;
-				value = ss.str();
-			}
-			reg = "F";
-			break;
-		default:
-			break;
+		if (!(entry_file[i]->value == UNDEFINED)) {
+			ss << "x" << setw(8) << setfill('0') << hex << entry_file[i]->value;
+			value = ss.str();
 		}
+			
 
-		cout << setfill(' ') << setw(5) << entry_file[i]->entry << setw(6) << busy << setw(7) << ready
-			<< setw(12) << "0x" << setfill('0') << hex << pc << setfill(' ') << setw(10)
-			<< stage << setw(6) << reg << dest << setw(12) << hex << value << endl;
+		cout << setfill(' ') << setw(5) << entry_file[i]->entry << setw(6) << busy << setw(7) << ready;
+		cout << setw(12) << pc << setw(10) << stage << setw(6) << reg << dest << setw(12) << value << endl;
+
 	}
 
 }
@@ -306,7 +308,7 @@ void IntRegisterUnit::reset(){
 
 MemoryUnit::MemoryUnit(unsigned char * data_memory, unsigned latency){
 	this->data_memory = data_memory;
-	this->latency = latency;
+	this->latency = latency + 1;
 }
 
 void MemoryUnit::write(unsigned data, unsigned addrPtr){
@@ -314,9 +316,14 @@ void MemoryUnit::write(unsigned data, unsigned addrPtr){
 	unsigned2char(data, data_memory + addrPtr); //already implemented
 }
 
-unsigned MemoryUnit::read(unsigned addrPtr){
-	isLocked();
+unsigned MemoryUnit::readByte(unsigned addrPtr){
+	isProcessing();
 	return data_memory[addrPtr];
+}
+
+unsigned MemoryUnit::readInt(unsigned addrPtr){
+	isProcessing();
+	return char2unsigned(&data_memory[addrPtr]);
 }
 
 
@@ -362,7 +369,7 @@ unsigned ReservationStationUnit::store(unsigned inst_address,unsigned Vj, unsign
 		}
 	}
 
-	if (isFull) throw HardwareException("RS");
+	if (isFull) throw HardwareException("RS " + station_file[0]->name.substr(0, station_file[0]->name.length() - 1));
 
 	unsigned i = 0;
 	while (i < station_file.size()){

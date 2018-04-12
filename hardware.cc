@@ -551,6 +551,12 @@ int IntegerFile::checkout(unsigned rob_dest){
 	return result;
 }
 
+void IntegerFile::alert(){
+	for (unsigned i = 0; i < int_file.size(); i++){
+		int_file[i]->alert();
+	}
+}
+
 int IntegerFile::Integer::operate(){
 		countLock();
 		switch (op_type){
@@ -658,15 +664,22 @@ void MultiplierFile::Multiplier::push_operands(int op1, int op2, unsigned dest){
 }
 
 float MultiplierFile::checkout(unsigned rob_dest){
-	int result = UNDEFINED;
+	float result = UNDEFINED;
 	for (unsigned i = 0; i < multiplier_file.size(); i++){
 		if (multiplier_file[i]->dest == rob_dest) result = multiplier_file[i]->operate();
 	}
 	return result;
 }
 
+void MultiplierFile::alert(){
+	for (unsigned i = 0; i < multiplier_file.size(); i++){
+		multiplier_file[i]->alert();
+	}
+}
+
 float MultiplierFile::Multiplier::operate(){
 	countLock();
+	cout << "Mult operate" << endl;
 	return op1 * op2;
 }
 
@@ -713,6 +726,12 @@ float DividerFile::checkout(unsigned rob_dest){
 		if (divider_file[i]->dest == rob_dest) result = divider_file[i]->operate();
 	}
 	return result;
+}
+
+void DividerFile::alert(){
+	for (unsigned i = 0; i < divider_file.size(); i++){
+		divider_file[i]->alert();
+	}
 }
 
 float DividerFile::Divider::operate(){

@@ -137,7 +137,7 @@ void Instruction::commit(){
 		pl->intregisters->write(reg_items[0], reg_items[1]);
 		break;
 	case F:
-		pl->fpregisters->write(reg_items[0], reg_items[1]);
+		pl->fpregisters->write(reg_items[0], reg_items[1]); //value, reg
 		break;
 	}
 	cout << "SUCCESS" << endl;
@@ -340,11 +340,52 @@ public:
 };
 
 class BEQZ : public Instruction {
+	bool branch;
 public:
 	BEQZ(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
 		type = "BEQZ";
 		RS = R1(bit_inst);
 		immediate = bit_inst & IMM_MASK;
+	}
+
+	void issue(){
+		unsigned vj = pl->intregisters->read(RS);
+
+		//send info to ROB and RS
+		rob_entry = pl->ROB->push(pc_init, data_type, UNDEFINED);
+		RSU_entry = pl->int_RSU->store(pc_init, vj, UNDEFINED, UNDEFINED, UNDEFINED, rob_entry, UNDEFINED);
+		cout << "SUCCESS" << endl;
+	}
+
+	void execute(){
+		unsigned * fromRS = pl->int_RSU->getVV(RSU_entry);
+
+		//send to execution unit (excpetion thrown if data undefined)
+		pl->int_file->assign(fromRS[0], immediate, AD, rob_entry);
+	}
+
+	void write_result(){
+		int target_addr = pl->int_file->checkout(rob_entry);
+
+		unsigned * fromRS = pl->int_RSU->getVV(RSU_entry); //get vj, vk
+		if (fromRS[0] == 0){
+			pl->ROB->update(RSU_entry, (unsigned) target_addr);	
+			branch = true;
+		}
+		else {
+			branch = false;
+			pl->ROB->update(RSU_entry, pc_init + 4);
+		}
+
+		pl->int_RSU->clear(RSU_entry);
+	}
+
+	void commit(){
+		vector<unsigned> ret_vals = pl->ROB->fetch();
+		pl->pc.load(ret_vals[0]);
+		if (branch) {
+			//clear all entries in ROB
+		}
 	}
 	
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new BEQZ(bit_ins, pl); }
@@ -512,10 +553,6 @@ public:
 		unsigned qj = pl->fpregisters->getDestination(RS);
 		unsigned qk = pl->fpregisters->getDestination(RT);
 
-		//DEBUGGING:
-		//Vk is undefined, so correct here
-		//it must be being assigned again elsewhere
-
 		//send info to ROB and RS
 		rob_entry = pl->ROB->push(pc_init, data_type, RD);
 		RSU_entry = pl->adder_RSU->store(pc_init, vj, vk, qj, qk, rob_entry, immediate);
@@ -569,6 +606,7 @@ public:
 };
 
 class MULTS : public Instruction {
+	unsigned EMA;
 public:
 	MULTS(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
 		type = "MULTS";
@@ -576,6 +614,52 @@ public:
 		RD = R1(bit_inst);
 		RS = R2(bit_inst);
 		RT = R3(bit_inst);
+	}
+
+	void issue(){
+		cout << "MULTS ISSUE" << endl;
+		//get operands
+		unsigned vj = pl->fpregisters->read(RS);
+		unsigned vk = pl->fpregisters->read(RT);
+		unsigned qj = pl->fpregisters->getDestination(RS);
+		unsigned qk = pl->fpregisters->getDestination(RT);
+
+		//send info to ROB and RS
+		rob_entry = pl->ROB->push(pc_init, data_type, RD);
+		RSU_entry = pl->mult_RSU->store(pc_init, vj, vk, qj, qk, rob_entry, immediate);
+		cout << "SUCCESS" << endl;
+
+		//show registers where data is coming from
+		pl->fpregisters->setRecieve(rob_entry, RD);
+	}
+
+	void execute(){
+		//read operands"
+		unsigned * fromRS = pl->mult_RSU->getVV(RSU_entry);
+
+		//send to execution unit (excpetion thrown if data undefined)
+		pl->mult_file->assign(fromRS[0], fromRS[1], rob_entry);
+
+	}
+
+	void write_result(){
+		//get result from execution unit
+		cout << "Mults WR" << endl;
+		float result = pl->mult_file->checkout(rob_entry);
+		pl->mult_RSU->clear(RSU_entry);
+
+
+		//checkout result value at RS that may be wating for it
+		pl->ROB->update(rob_entry, result);
+		pl->int_RSU->checkout(rob_entry, result);
+		pl->load_RSU->checkout(rob_entry, result);
+		pl->adder_RSU->checkout(rob_entry, result);
+		pl->mult_RSU->checkout(rob_entry, result);
+
+		//send result to ROB
+		pl->ROB->update(rob_entry, float2unsigned(result));
+		cout << "SUCCESS" << endl;
+
 	}
 	
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new MULTS(bit_ins, pl); }

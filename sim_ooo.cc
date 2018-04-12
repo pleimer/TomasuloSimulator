@@ -76,16 +76,16 @@ sim_ooo::~sim_ooo(){
 void sim_ooo::init_exec_unit(exe_unit_t exec_unit, unsigned latency, unsigned instances){
 	switch (exec_unit){
 	case INTEGER:
-		pipeline->int_file = new IntegerFile(latency, instances);
+		pipeline->int_file = new IntegerFile(instances, latency);
 		break;
 	case ADDER:
-		pipeline->adder_file = new AdderFile(latency, instances);
+		pipeline->adder_file = new AdderFile(instances, latency);
 		break;
 	case MULTIPLIER:
-		pipeline->mult_file = new MultiplierFile(latency, instances);
+		pipeline->mult_file = new MultiplierFile(instances, latency);
 		break;
 	case DIVIDER:
-		pipeline->div_file = new DividerFile(latency, instances);
+		pipeline->div_file = new DividerFile(instances, latency);
 		break;
 	case MEMORY: 
 		pipeline->memory_unit = new MemoryUnit(data_memory, latency);
@@ -119,11 +119,12 @@ void sim_ooo::set_int_register(unsigned reg, int value){
 }
 
 float sim_ooo::get_fp_register(unsigned reg){
-		return pipeline->fpregisters->read(reg); //fill here
+	if (pipeline->fpregisters->read(reg) == UNDEFINED) return UNDEFINED;
+	return unsigned2float(pipeline->fpregisters->read(reg)); //fill here
 }
 
 void sim_ooo::set_fp_register(unsigned reg, float value){
-	pipeline->fpregisters->write(value, reg);
+	pipeline->fpregisters->write(float2unsigned(value), reg);
 }
 
 unsigned sim_ooo::get_pending_int_register(unsigned reg){
@@ -168,9 +169,9 @@ void sim_ooo::print_registers(){
 			cout << setfill(' ') << setw(7) << "R" << dec << i << setw(11) << get_int_register(i) << hex << "/0x" << setw(8) << setfill('0') << get_int_register(i) << setfill(' ') << setw(5) << "-" << endl;
         }
 	for (i=0; i< NUM_GP_REGISTERS; i++){
-                if (get_pending_fp_register(i)!=UNDEFINED) 
+                if (get_pending_fp_register(i)!= UNDEFINED) 
 			cout << setfill(' ') << setw(7) << "F" << dec << i << setw(22) << "-" << setw(5) << get_pending_fp_register(i) << endl;
-                else if (get_fp_register(i)!=UNDEFINED) 
+                else if (get_fp_register(i)!= UNDEFINED) 
 			cout << setfill(' ') << setw(7) << "F" << dec << i << setw(11) << get_fp_register(i) << hex << "/0x" << setw(8) << setfill('0') << float2unsigned(get_fp_register(i)) << setfill(' ') << setw(5) << "-" << endl;
 	}
 	cout << endl;

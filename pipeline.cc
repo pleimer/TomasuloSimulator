@@ -22,10 +22,14 @@ Pipeline::Pipeline(unsigned mem_size,
 }
 
 void Pipeline::Clock::posedge(Pipeline& pipeline){
-	//alert all hardware this is start of new cycle
+	//alert all units with latency that this is start of new clock cycle
+
 	pipeline.memory_unit->alert();
-	//pipeline.adr_unit.alert();
+	//pipeline.adr_unit.alert(); - DON"T DO THIS
+	pipeline.int_file->alert();
 	pipeline.adder_file->alert();
+	pipeline.mult_file->alert();
+	pipeline.div_file->alert();
 }
 
 void Pipeline::initialize(unsigned base_address){

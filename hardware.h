@@ -14,7 +14,7 @@ typedef enum { INTEGER_RS, ADD_RS, MULT_RS, LOAD_B } res_station_t;
 
 typedef enum { INTEGER, ADDER, MULTIPLIER, DIVIDER, MEMORY } exe_unit_t;
 
-typedef enum{ ISSUE, EXECUTE, WRITE_RESULT, COMMIT } stage_t;
+typedef enum{ COMMIT, ISSUE, EXECUTE, WRITE_RESULT } stage_t;
 
 typedef enum{ R, F } reg_t;
 
@@ -241,8 +241,8 @@ class IntegerFile {
 	//stores rob destination from instruction because there may be multiple units
 
 	class Integer : public Lock{
-		int op1;
-		int op2;
+		unsigned op1;
+		unsigned op2;
 		integer_t op_type;
 
 	public:
@@ -255,7 +255,7 @@ class IntegerFile {
 public:
 	IntegerFile(unsigned num_units, unsigned latency);
 	void assign(int op1, int op2, integer_t op_type, unsigned dest); //sees if empty unit, throws exception if not. Latency countdown starts after this
-	
+	void alert();
 	int checkout(unsigned rob_dest);//sees is result is ready for specific rob_dest. Throws hardware exception if not
 
 private:
@@ -267,8 +267,8 @@ private:
 
 class AdderFile {
 	class Adder : public Lock{
-		int op1;
-		int op2;
+		unsigned op1;
+		unsigned op2;
 
 	public:
 		Adder(unsigned latency);
@@ -282,7 +282,6 @@ public:
 	void assign(int op1, int op2, unsigned dest); //sees if empty unit, throws exception if not. Latency countdown starts after this
 
 	float checkout(unsigned rob_dest);//sees is result is ready for specific rob_dest. Throws hardware exception if not
-
 	void alert();
 
 private:
@@ -294,8 +293,8 @@ private:
 
 class MultiplierFile {
 	class Multiplier : public Lock{
-		int op1;
-		int op2;
+		unsigned op1;
+		unsigned op2;
 
 	public:
 		Multiplier(unsigned latency);
@@ -307,7 +306,7 @@ class MultiplierFile {
 public:
 	MultiplierFile(unsigned num_units, unsigned latency);
 	void assign(int op1, int op2, unsigned dest); //sees if empty unit, throws exception if not. Latency countdown starts after this
-
+	void alert();
 	float checkout(unsigned rob_dest);//sees is result is ready for specific rob_dest. Throws hardware exception if not
 
 private:
@@ -333,7 +332,7 @@ class DividerFile {
 public:
 	DividerFile(unsigned num_units, unsigned latency);
 	void assign(int op1, int op2, unsigned dest); //sees if empty unit, throws exception if not. Latency countdown starts after this
-
+	void alert();
 	float checkout(unsigned rob_dest);//sees is result is ready for specific rob_dest. Throws hardware exception if not
 
 private:

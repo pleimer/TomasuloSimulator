@@ -419,7 +419,7 @@ void ReservationStationUnit::update(unsigned address, unsigned entry){
 }
 
 unsigned * ReservationStationUnit::getVV(unsigned entry){
-	if (entry == UNDEFINED) throw HardwareException("Invalid entry");
+	if (entry == UNDEFINED) throw HardwareException("RS: no entry exists.");
 	vv[0] = station_file[entry]->Vj;
 	vv[1] = station_file[entry]->Vk;
 	return vv;
@@ -607,6 +607,12 @@ float AdderFile::checkout(unsigned rob_dest){
 		if (adder_file[i]->dest == rob_dest) result = adder_file[i]->operate();
 	}
 	return result;
+}
+
+void AdderFile::alert(){
+	for (unsigned i = 0; i < adder_file.size(); i++){
+		adder_file[i]->alert();
+	}
 }
 
 float AdderFile::Adder::operate(){

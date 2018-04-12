@@ -283,6 +283,8 @@ public:
 
 	float checkout(unsigned rob_dest);//sees is result is ready for specific rob_dest. Throws hardware exception if not
 
+	void alert();
+
 private:
 	std::vector<Adder*> adder_file;
 	unsigned num_units;

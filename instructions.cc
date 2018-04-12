@@ -108,7 +108,9 @@ void Instruction::assess(){
 
 void Instruction::issue(){
 	cout << type << " ISSUE" << endl;
-
+	rob_entry = pl->ROB->push(pc_init, data_type, RD);
+	RSU_entry = pl->int_RSU->store(pc_init, immediate, UNDEFINED, UNDEFINED, UNDEFINED, rob_entry, immediate);
+	pl->fpregisters->setRecieve(rob_entry, RD);
 	return;
 }
 
@@ -118,7 +120,8 @@ void Instruction::execute(){
 }
 
 void Instruction::write_result(){
-	cout << type << " WRITE_RESULT" << endl;
+	//update ROB and RS with results
+
 	return;
 }
 
@@ -459,13 +462,13 @@ public:
 		cout << "LWS_WR" << endl;
 		pl->load_RSU->clear(RSU_entry);
 
-		//update ROB and RS with results
-		unsigned result = pl->memory_unit->readInt(EMA); 
+		unsigned result = pl->memory_unit->readInt(EMA);
 		pl->ROB->update(rob_entry, result);
 		pl->int_RSU->checkout(rob_entry, result);
 		pl->load_RSU->checkout(rob_entry, result);
 		pl->adder_RSU->checkout(rob_entry, result);
 		pl->mult_RSU->checkout(rob_entry, result);
+
 
 		//free all hardware units here
 		pl->adr_unit.free();
@@ -515,7 +518,7 @@ public:
 
 		//send info to ROB and RS
 		rob_entry = pl->ROB->push(pc_init, data_type, RD);
-		pl->adder_RSU->store(pc_init,vj, vk,qj,qk, rob_entry, immediate);
+		RSU_entry = pl->adder_RSU->store(pc_init, vj, vk, qj, qk, rob_entry, immediate);
 		cout << "SUCCESS" << endl;
 
 		//show registers where data is coming from
@@ -524,19 +527,25 @@ public:
 
 	void execute(){
 		//read operands"
-		unsigned * results = pl->adder_RSU->getVV(RSU_entry);
+		unsigned * fromRS = pl->adder_RSU->getVV(RSU_entry);
 
 		//send to execution unit (excpetion thrown if data undefined)
-		pl->adder_file->assign(results[0], results[1], rob_entry);
+		pl->adder_file->assign(fromRS[0], fromRS[1], rob_entry);
 
 	}
 
 	void write_result(){
 		//get result from execution unit
 		float result = pl->adder_file->checkout(rob_entry);
+		pl->adder_RSU->clear(RSU_entry);
+		
 
 		//checkout result value at RS that may be wating for it
+		pl->ROB->update(rob_entry, result);
+		pl->int_RSU->checkout(rob_entry, result);
+		pl->load_RSU->checkout(rob_entry, result);
 		pl->adder_RSU->checkout(rob_entry, result);
+		pl->mult_RSU->checkout(rob_entry, result);
 
 		//send result to ROB
 		pl->ROB->update(rob_entry, float2unsigned(result));

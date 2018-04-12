@@ -106,17 +106,17 @@ class ReorderBuffer{
 public:
 	ReorderBuffer(unsigned rob_size);
 
+	void pushHead();
 	unsigned push(unsigned pc, reg_t data_type, unsigned dest);
 	void update(unsigned dest, unsigned value);
 	void updateState(unsigned entry, stage_t stage);
 
 	reg_t getDataType();
-	std::vector<unsigned> fetch();
+	std::vector<unsigned> fetch(unsigned rob_entry);
 	void print();
 
 private:
 	std::vector<Entry*> entry_file;
-	void pushHead();
 	bool isFull();
 	unsigned head;
 	unsigned rob_size;

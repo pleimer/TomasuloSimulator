@@ -111,6 +111,7 @@ ReorderBuffer::ReorderBuffer(unsigned rob_size){
 	
 }
 
+
 unsigned ReorderBuffer::push(unsigned pc, reg_t data_type, unsigned dest){
 	if (isFull()) throw HardwareException("ROB");
 
@@ -167,7 +168,8 @@ reg_t ReorderBuffer::getDataType(){
 	return entry_file[head]->data_type;
 }
 
-vector<unsigned> ReorderBuffer::fetch(){
+vector<unsigned> ReorderBuffer::fetch(unsigned rob_entry){
+	if (head != rob_entry) throw HardwareException("Not head");
 	if (!entry_file[head]->ready) throw InstException();
 	vector<unsigned> return_items;
 

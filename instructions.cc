@@ -52,6 +52,10 @@ Instruction::Instruction(int bit_inst, Pipeline * pl){
 	RT = REG_EMPTY;
 }
 
+stage_t Instruction::getStage(){
+	return stage;
+}
+
 
 void Instruction::assess(){
 	switch (stage){
@@ -134,7 +138,7 @@ void Instruction::commit(){
 		pl->intregisters->write(reg_items[0], reg_items[1]);
 		break;
 	case F:
-		pl->fpregisters->write(unsigned2float(reg_items[0]), reg_items[1]);
+		pl->fpregisters->write(reg_items[0], reg_items[1]);
 		break;
 	}
 	cout << "SUCCESS" << endl;
@@ -438,6 +442,8 @@ public:
 		//send to reservation stations too
 		//inst_address, Vj, Vk, Qj, Qk, dest, address, 
 		RSU_entry = pl->load_RSU->store(pc_init, immediate, UNDEFINED, UNDEFINED, UNDEFINED, rob_entry, immediate);
+		//and tell registers where data is coming from
+		pl->fpregisters->setRecieve(rob_entry, RD);
 		cout << "SUCCESS" << endl;
 	}
 
@@ -453,13 +459,19 @@ public:
 	}
 
 	void write_result(){
-		//update ROB and RS with results
+		
 		cout << "LWS_WR" << endl;
-		pl->load_RSU->update(EMA, RSU_entry);
+		cout << "LWS just updated the RS" << endl;
 		pl->load_RSU->clear(RSU_entry);
 
+		//update ROB and RS with results
 		unsigned result = pl->memory_unit->readInt(EMA); 
 		pl->ROB->update(rob_entry, result);
+		pl->int_RSU->checkout(rob_entry, result);
+		pl->load_RSU->checkout(rob_entry, result);
+		pl->adder_RSU->checkout(rob_entry, result);
+		pl->mult_RSU->checkout(rob_entry, result);
+		
 
 		cout << "SUCCESS" << endl;
 	}
@@ -493,19 +505,31 @@ public:
 
 	void issue(){
 		cout << "ADDS ISSUE" << endl;
+		//get operands
+		unsigned vj = pl->fpregisters->read(RS);
+		unsigned vk = pl->fpregisters->read(RT);
+		unsigned qj = pl->fpregisters->getDestination(RS);
+		unsigned qk = pl->fpregisters->getDestination(RT);
+
+		//DEBUGGING:
+		//Vk is undefined, so correct here
+		//it must be being assigned again elsewhere
+
 		//send info to ROB and RS
 		rob_entry = pl->ROB->push(pc_init, data_type, RD);
-		pl->adder_RSU->store(pc_init, UNDEFINED, UNDEFINED, UNDEFINED, UNDEFINED, RD, immediate);
+		pl->adder_RSU->store(pc_init,vj, vk,qj,qk, rob_entry, immediate);
 		cout << "SUCCESS" << endl;
+
+		//show registers where data is coming from
+		pl->fpregisters->setRecieve(rob_entry, RD);
 	}
 
 	void execute(){
-		//read operands (data exception thrown if not ready)"
-		float op1 = pl->fpregisters->read(RS);
-		float op2 = pl->fpregisters->read(RT);
+		//read operands"
+		unsigned * results = pl->adder_RSU->getVV(RSU_entry);
 
-		//send to execution unit
-		pl->adder_file->assign(op1, op2, rob_entry);
+		//send to execution unit (excpetion thrown if data undefined)
+		pl->adder_file->assign(results[0], results[1], rob_entry);
 
 	}
 
@@ -513,7 +537,7 @@ public:
 		//get result from execution unit
 		float result = pl->adder_file->checkout(rob_entry);
 
-		//checkout result value at RS
+		//checkout result value at RS that may be wating for it
 		pl->adder_RSU->checkout(rob_entry, result);
 
 		//send result to ROB

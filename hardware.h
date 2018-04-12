@@ -128,7 +128,7 @@ class FPRegisterUnit{
 
 	struct FPRegister{
 		unsigned register_number;
-		float data;
+		unsigned data;
 		unsigned rob_dest;
 	};
 
@@ -136,8 +136,9 @@ public:
 	FPRegisterUnit(unsigned num_registers);
 	~FPRegisterUnit();
 
-	float read(unsigned address);
-	void write(float data, unsigned address);
+	void setRecieve(unsigned rob_entry, unsigned address);
+	unsigned read(unsigned address);
+	void write(unsigned data, unsigned address);
 	void clear(unsigned address);
 	unsigned getDestination(unsigned address);
 
@@ -194,6 +195,7 @@ public:
 class ReservationStationUnit{
 
 	unsigned num_stations; //enforced maximum number of stations
+	unsigned vv[2];
 
 	struct ReservationStation {
 		std::string name;
@@ -213,7 +215,9 @@ class ReservationStationUnit{
 
 public:
 	ReservationStationUnit(unsigned num_stations, std::string name);//build unit and assign name_n to each entry
+
 	void clear(unsigned entry); //clears an entry
+	unsigned * getVV(unsigned entry); //get vj and vk at rsu_entry
 	void checkout(unsigned rob_entry, unsigned data); //is ROB entry in here, if so replaces inserts data
 	
 	//used by issue to store values, dest, references, and addresses - come from reg file

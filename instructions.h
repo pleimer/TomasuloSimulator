@@ -47,6 +47,7 @@ public:
 	//Assess() handles the proper, sequential execution of each instruction phase
 	//does not advance to the next stage if exception is thrown
 	void assess();
+	stage_t getStage();
 
 	//pipeline stages
 	virtual void issue();

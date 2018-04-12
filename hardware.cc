@@ -105,7 +105,7 @@ ReorderBuffer::ReorderBuffer(unsigned rob_size){
 	head = 0;
 	for (unsigned i = 0; i < rob_size; i++){
 		entry_file.push_back(new Entry);
-		entry_file[i]->entry = i;
+		entry_file[i]->entry = (i + 1);
 		entry_file[i]->clear();
 	}
 	
@@ -248,14 +248,19 @@ FPRegisterUnit::~FPRegisterUnit(){
 	register_file.clear();
 }
 
-float FPRegisterUnit::read(unsigned address){
-	float data = register_file[address]->data;
-	if (data == UNDEFINED) throw DataException();
+unsigned FPRegisterUnit::read(unsigned address){
+	unsigned data = register_file[address]->data;
 	return data;
 }
+void FPRegisterUnit::setRecieve(unsigned rob_entry, unsigned address){
+	register_file[address]->rob_dest = rob_entry;
+	register_file[address]->data = UNDEFINED;
 
-void FPRegisterUnit::write(float data, unsigned address){
+}
+
+void FPRegisterUnit::write(unsigned data, unsigned address){
 	register_file[address]->data = data;
+	register_file[address]->rob_dest = UNDEFINED;
 }
 
 void FPRegisterUnit::clear(unsigned address){
@@ -289,7 +294,6 @@ IntRegisterUnit::~IntRegisterUnit(){
 
 int IntRegisterUnit::read(unsigned address){
 	int data = register_file[address]->data;
-	if (data == UNDEFINED) throw DataException();
 	return data;
 }
 
@@ -414,6 +418,13 @@ void ReservationStationUnit::update(unsigned address, unsigned entry){
 	station_file[entry]->address = address;
 }
 
+unsigned * ReservationStationUnit::getVV(unsigned entry){
+	if (entry == UNDEFINED) throw HardwareException("Invalid entry");
+	vv[0] = station_file[entry]->Vj;
+	vv[1] = station_file[entry]->Vk;
+	return vv;
+}
+
 void ReservationStationUnit::checkout(unsigned rob_entry, unsigned data){
 	for (unsigned i = 0; i < station_file.size(); i++){
 		if (station_file[i]->Qj == rob_entry) {
@@ -465,14 +476,14 @@ void ReservationStationUnit::print(){
 		if (!(station_file[i]->Qj == UNDEFINED)) {
 			ss.str("");
 			ss.clear();
-			ss << "0x" << setw(8) << setfill('0') << hex << station_file[i]->Qj;
+			ss << station_file[i]->Qj;
 			qj = ss.str();
 		}
 
 		if (!(station_file[i]->Qk == UNDEFINED)) {
 			ss.str("");
 			ss.clear();
-			ss << "0x" << setw(8) << setfill('0') << hex << station_file[i]->Qk;
+			ss << station_file[i]->Qk;
 			qk = ss.str();
 		}
 
@@ -569,6 +580,7 @@ AdderFile::Adder::Adder(unsigned latency){
 
 void AdderFile::assign(int op1, int op2, unsigned dest){
 	//try to use first unit available
+	if ((op1 == UNDEFINED) || (op2 == UNDEFINED)) throw DataException();
 	bool nonAvailable = true;
 	for (unsigned i = 0; i < adder_file.size(); i++){
 		try{
@@ -590,7 +602,7 @@ void AdderFile::Adder::push_operands(int op1, int op2, unsigned dest){
 }
 
 float AdderFile::checkout(unsigned rob_dest){
-	int result = UNDEFINED;
+	float result = UNDEFINED;
 	for (unsigned i = 0; i < adder_file.size(); i++){
 		if (adder_file[i]->dest == rob_dest) result = adder_file[i]->operate();
 	}
@@ -690,7 +702,7 @@ void DividerFile::Divider::push_operands(int op1, int op2, unsigned dest){
 }
 
 float DividerFile::checkout(unsigned rob_dest){
-	int result = UNDEFINED;
+	float result = UNDEFINED;
 	for (unsigned i = 0; i < divider_file.size(); i++){
 		if (divider_file[i]->dest == rob_dest) result = divider_file[i]->operate();
 	}

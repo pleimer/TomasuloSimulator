@@ -91,6 +91,7 @@ void Controller::execute(){
 		instruction = inst_queue->pop();
 		//put on running_inst stack, then run through that stack and assess() every instruction in it
 		running_inst.push_back(instruction);
+		setInInstStageOrder(running_inst);
 
 		for (unsigned i=0; i < running_inst.size(); i++){
 			try{
@@ -113,4 +114,17 @@ void Controller::execute(){
 
 unsigned char * Controller::inst_mem_base(){
 	return inst_memory->get_mem_ptr();
+}
+
+void Controller::setInInstStageOrder(vector<Instruction *> & running_inst){
+	Instruction * temp;
+	for (unsigned i = 0; i < running_inst.size(); i++){
+		for (unsigned j = i; j < running_inst.size(); j++){
+			if (running_inst[i]->getStage() > running_inst[j]->getStage()){
+				temp = running_inst[i];
+				running_inst[i] = running_inst[j];
+				running_inst[j] = temp;
+			}
+		}
+	}
 }

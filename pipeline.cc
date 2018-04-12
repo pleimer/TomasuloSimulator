@@ -34,4 +34,5 @@ void Pipeline::initialize(unsigned base_address){
 void Pipeline::cycle(){
 	clock.posedge(*this);
 }
+
 	

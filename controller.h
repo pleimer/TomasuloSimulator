@@ -42,6 +42,7 @@ public:
 	Controller(unsigned inst_queue_size, Pipeline * pl);
 	void execute();
 	unsigned char * inst_mem_base();
+	void setInInstStageOrder(std::vector<Instruction *> &);//sets vector of instructions in instruction stage order
 };
 
 #endif

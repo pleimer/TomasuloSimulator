@@ -111,13 +111,7 @@ void sim_ooo::reset(){
 }
 
 int sim_ooo::get_int_register(unsigned reg){
-	try{
 		return pipeline->intregisters->read(reg);
-	}
-	catch (exception &e){
-		return UNDEFINED;
-	}
-	
 }
 
 void sim_ooo::set_int_register(unsigned reg, int value){
@@ -125,12 +119,7 @@ void sim_ooo::set_int_register(unsigned reg, int value){
 }
 
 float sim_ooo::get_fp_register(unsigned reg){
-	try{
 		return pipeline->fpregisters->read(reg); //fill here
-	}
-	catch (exception &e){
-		return UNDEFINED;
-	}
 }
 
 void sim_ooo::set_fp_register(unsigned reg, float value){

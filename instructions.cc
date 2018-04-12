@@ -108,10 +108,7 @@ void Instruction::assess(){
 
 void Instruction::issue(){
 	cout << type << " ISSUE" << endl;
-	//send info to ROB and RS
-	rob_entry = pl->ROB->push(pc_init, data_type, RD);
-	pl->adder_RSU->store(pc_init, UNDEFINED, UNDEFINED, UNDEFINED, UNDEFINED, RD, immediate);
-	cout << "SUCCESS" << endl;
+
 	return;
 }
 
@@ -127,8 +124,7 @@ void Instruction::write_result(){
 
 void Instruction::commit(){
 	cout << type << " COMMIT" << endl;
-	//free all hardware units here
-	pl->adr_unit.free();
+
 	
 	//registers get data from ROB and ROB pops instruction out for all instructions
 	reg_t data_type = pl->ROB->getDataType();
@@ -461,7 +457,6 @@ public:
 	void write_result(){
 		
 		cout << "LWS_WR" << endl;
-		cout << "LWS just updated the RS" << endl;
 		pl->load_RSU->clear(RSU_entry);
 
 		//update ROB and RS with results
@@ -471,6 +466,9 @@ public:
 		pl->load_RSU->checkout(rob_entry, result);
 		pl->adder_RSU->checkout(rob_entry, result);
 		pl->mult_RSU->checkout(rob_entry, result);
+
+		//free all hardware units here
+		pl->adr_unit.free();
 		
 
 		cout << "SUCCESS" << endl;

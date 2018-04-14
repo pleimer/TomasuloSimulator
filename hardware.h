@@ -2,6 +2,7 @@
 #define HARDWARE_H_
 
 #include <iostream>
+#include <string.h>
 #include <exception>
 #include <vector>
 #include <queue>

@@ -100,9 +100,22 @@ void sim_ooo::load_program(const char *filename, unsigned base_address){
 }
 
 void sim_ooo::run(unsigned cycles){
-	for (int i = 0; i < cycles; i++){
-		pipeline->cycle();
-		controller->execute();
+	try{
+		if (cycles != 0){
+			for (int i = 0; i < cycles; i++){
+				pipeline->cycle();
+				controller->execute();
+			}
+		}
+		else{
+			while (true){
+				pipeline->cycle();
+				controller->execute();
+			}
+		}
+	}
+	catch (exception &e){
+		cerr << e.what();
 	}
 }
 

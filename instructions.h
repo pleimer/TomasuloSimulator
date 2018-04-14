@@ -17,7 +17,13 @@
 
 class InstructionEmpty : public std::exception {//thrown when there is nothing left for instruction to do
 	const char * what() const throw(){
-		return "Instruction empty\n";
+		return ""; // "Instruction empty\n";
+	}
+};
+
+class EndOfProgram : public std::exception {//thrown when there is nothing left for instruction to do
+	const char * what() const throw(){
+		return "Program over!\n"; // "Instruction empty\n";
 	}
 };
 
@@ -41,6 +47,8 @@ protected:
 	unsigned int RD;
 	unsigned int RS;
 	unsigned int RT;
+
+	unsigned arith_result;
 
 
 public:

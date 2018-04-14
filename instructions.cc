@@ -43,6 +43,7 @@ Instruction::Instruction(int bit_inst, Pipeline * pl){
 	this->RSU_entry = UNDEFINED;
 	this->stage = ISSUE;
 	this->data_type = (reg_t)UNDEFINED;
+	this->arith_result = UNDEFINED;
 	type = OPCODE(bit_inst);
 	
 
@@ -99,6 +100,7 @@ void Instruction::assess(){
 		catch (HardwareException &he){
 			cerr << he.what();
 		}
+		catch (InstException &ie){}
 		
 		break;
 	default:
@@ -128,15 +130,23 @@ void Instruction::write_result(){
 
 void Instruction::commit(){
 	cout << "COMMIT" << endl;
+	
+	//in case commit didnt work last time, still must checkout RSs
+	pl->ROB->update(rob_entry, arith_result);
+	pl->int_RSU->checkout(rob_entry, arith_result);
+	pl->load_RSU->checkout(rob_entry, arith_result);
+	pl->adder_RSU->checkout(rob_entry, arith_result);
+	pl->mult_RSU->checkout(rob_entry, arith_result);
+
 	//registers get data from ROB and ROB pops instruction out for all instructions
 	reg_t data_type = pl->ROB->getDataType();
 	vector<unsigned> reg_items = pl->ROB->fetch(rob_entry);
 	switch (data_type){
 	case R:
-		pl->intregisters->checkout(reg_items[0], reg_items[1]);
+		pl->intregisters->checkout(reg_items[0], rob_entry);
 		break;
 	case F:
-		pl->fpregisters->checkout(reg_items[0], reg_items[1]); //value, reg
+		pl->fpregisters->checkout(reg_items[0], rob_entry); //value, reg with that rob_entry
 		break;
 	}
 	cout << "SUCCESS" << endl;
@@ -485,7 +495,7 @@ public:
 	}
 	void commit(){
 		cout << "COMMIT" << endl;
-		throw HardwareException("Program Over!");
+		throw EndOfProgram();
 	}
 	
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new EOP(bit_ins, pl); }
@@ -533,12 +543,12 @@ public:
 		cout << "WRITE RESULT" << endl;
 		pl->load_RSU->clear(RSU_entry);
 
-		unsigned result = pl->memory_unit->readInt(EMA);
-		pl->ROB->update(rob_entry, result);
-		pl->int_RSU->checkout(rob_entry, result);
-		pl->load_RSU->checkout(rob_entry, result);
-		pl->adder_RSU->checkout(rob_entry, result);
-		pl->mult_RSU->checkout(rob_entry, result);
+		arith_result = pl->memory_unit->readInt(EMA);
+		pl->ROB->update(rob_entry, arith_result);
+		pl->int_RSU->checkout(rob_entry, arith_result);
+		pl->load_RSU->checkout(rob_entry, arith_result);
+		pl->adder_RSU->checkout(rob_entry, arith_result);
+		pl->mult_RSU->checkout(rob_entry, arith_result);
 
 
 		//free all hardware units here
@@ -609,19 +619,19 @@ public:
 	void write_result(){
 		cout << "WRITE RESULT" << endl;
 		//get result from execution unit
-		unsigned result = pl->adder_file->checkout(rob_entry);
+		arith_result = pl->adder_file->checkout(rob_entry);
 		pl->adder_RSU->clear(RSU_entry);
 		
 
 		//checkout result value at RS that may be wating for it
-		pl->ROB->update(rob_entry, result);
-		pl->int_RSU->checkout(rob_entry, result);
-		pl->load_RSU->checkout(rob_entry, result);
-		pl->adder_RSU->checkout(rob_entry, result);
-		pl->mult_RSU->checkout(rob_entry, result);
+		pl->ROB->update(rob_entry, arith_result);
+		pl->int_RSU->checkout(rob_entry, arith_result);
+		pl->load_RSU->checkout(rob_entry, arith_result);
+		pl->adder_RSU->checkout(rob_entry, arith_result);
+		pl->mult_RSU->checkout(rob_entry, arith_result);
 
 		//send result to ROB
-		pl->ROB->update(rob_entry, result);
+		pl->ROB->update(rob_entry, arith_result);
 
 	}
 	
@@ -673,19 +683,19 @@ public:
 	void write_result(){
 		cout << "WRITE RESULT" << endl;
 		//get result from execution unit
-		unsigned result = pl->adder_file->checkout(rob_entry);
+		arith_result = pl->adder_file->checkout(rob_entry);
 		pl->adder_RSU->clear(RSU_entry);
 
 
 		//checkout result value at RS that may be wating for it
-		pl->ROB->update(rob_entry, result);
-		pl->int_RSU->checkout(rob_entry, result);
-		pl->load_RSU->checkout(rob_entry, result);
-		pl->adder_RSU->checkout(rob_entry, result);
-		pl->mult_RSU->checkout(rob_entry, result);
+		pl->ROB->update(rob_entry, arith_result);
+		pl->int_RSU->checkout(rob_entry, arith_result);
+		pl->load_RSU->checkout(rob_entry, arith_result);
+		pl->adder_RSU->checkout(rob_entry, arith_result);
+		pl->mult_RSU->checkout(rob_entry, arith_result);
 
 		//send result to ROB
-		pl->ROB->update(rob_entry, result);
+		pl->ROB->update(rob_entry, arith_result);
 
 	}
 	
@@ -738,19 +748,19 @@ public:
 	void write_result(){
 		//get result from execution unit
 		cout << "WRITE RESULT" << endl;
-		unsigned result = pl->mult_file->checkout(rob_entry);
+		arith_result = pl->mult_file->checkout(rob_entry);
 		pl->mult_RSU->clear(RSU_entry);
 
 
 		//checkout result value at RS that may be wating for it
-		pl->ROB->update(rob_entry, result);
-		pl->int_RSU->checkout(rob_entry, result);
-		pl->load_RSU->checkout(rob_entry, result);
-		pl->adder_RSU->checkout(rob_entry, result);
-		pl->mult_RSU->checkout(rob_entry, result);
+		pl->ROB->update(rob_entry, arith_result);
+		pl->int_RSU->checkout(rob_entry, arith_result);
+		pl->load_RSU->checkout(rob_entry, arith_result);
+		pl->adder_RSU->checkout(rob_entry, arith_result);
+		pl->mult_RSU->checkout(rob_entry, arith_result);
 
 		//send result to ROB
-		pl->ROB->update(rob_entry, result);
+		pl->ROB->update(rob_entry, arith_result);
 		cout << "SUCCESS" << endl;
 
 	}
@@ -803,19 +813,19 @@ public:
 
 	void write_result(){
 		//get result from execution unit
-		unsigned result = pl->div_file->checkout(rob_entry);
+		arith_result = pl->div_file->checkout(rob_entry);
 		pl->mult_RSU->clear(RSU_entry);
 
 
 		//checkout result value at RS that may be wating for it
-		pl->ROB->update(rob_entry, result);
-		pl->int_RSU->checkout(rob_entry, result);
-		pl->load_RSU->checkout(rob_entry, result);
-		pl->adder_RSU->checkout(rob_entry, result);
-		pl->mult_RSU->checkout(rob_entry, result);
+		pl->ROB->update(rob_entry, arith_result);
+		pl->int_RSU->checkout(rob_entry, arith_result);
+		pl->load_RSU->checkout(rob_entry, arith_result);
+		pl->adder_RSU->checkout(rob_entry, arith_result);
+		pl->mult_RSU->checkout(rob_entry, arith_result);
 
 		//send result to ROB
-		pl->ROB->update(rob_entry, result);
+		pl->ROB->update(rob_entry, arith_result);
 
 	}
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new DIVS(bit_ins, pl); }

@@ -89,7 +89,6 @@ bool Lock::countLock(){
 
 
 void ProgramCounter::pulse(){
-	cout << "PC: " << hex << addrPtr << endl;
 	addrPtr += 4; //one instruction
 }
 
@@ -254,7 +253,7 @@ void ReorderBuffer::print(){
 			
 
 		cout << setfill(' ') << setw(5) << entry_file[i]->entry << setw(6) << busy << setw(7) << ready;
-		cout << setw(12) << pc << setw(10) << stage << setw(6) << reg << dest << setw(12) << value << endl;
+		cout << setw(12) << pc << setw(10) << stage << setw(5) << reg << dest << setw(12) << value << endl;
 
 	}
 

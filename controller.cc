@@ -100,10 +100,16 @@ void Controller::execute(){
 		try{
 			if (running_inst[i]->getStage() == COMMIT){
 				running_inst[i]->assess();
-				// only one that should commit is at head
 			}
 		}
-		catch (exception &e){}
+		catch (InstructionEmpty& ie){
+			cout << "deleted" << endl;
+			running_inst.erase(running_inst.begin() + i);
+			i--;
+		}
+		catch (exception &e) {
+			throw e;
+		}
 	}
 	
 	

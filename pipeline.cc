@@ -30,6 +30,7 @@ void Pipeline::Clock::posedge(Pipeline& pipeline){
 	pipeline.adder_file->alert();
 	pipeline.mult_file->alert();
 	pipeline.div_file->alert();
+	pipeline.ROB->alert();
 }
 
 void Pipeline::initialize(unsigned base_address){

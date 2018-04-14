@@ -8,7 +8,7 @@
 
 typedef enum { LW, SW, ADD, ADDI, SUB, SUBI, XOR, XORI, OR, ORI, AND, ANDI, MULT, DIV, BEQZ, BNEZ, BLTZ, BGTZ, BLEZ, BGEZ, JUMP, EOP, LWS, SWS, ADDS, SUBS, MULTS, DIVS } opcode_t;
 
-typedef enum {AD, S, X, O, AN} integer_t; //for integer unit operations
+typedef enum {AD, S, X, O, AN} operation_t; //for integer unit operations
 
 typedef enum { INTEGER_RS, ADD_RS, MULT_RS, LOAD_B } res_station_t;
 
@@ -87,7 +87,7 @@ public:
 
 
 
-class ReorderBuffer{
+class ReorderBuffer : public Lock{
 	struct Entry {
 		reg_t data_type;
 		unsigned entry;
@@ -108,6 +108,7 @@ public:
 
 	void pushHead();
 	unsigned push(unsigned pc, reg_t data_type, unsigned dest);
+	void clear(unsigned entry);
 	void update(unsigned dest, unsigned value);
 	void updateState(unsigned entry, stage_t stage);
 
@@ -139,6 +140,8 @@ public:
 	void setRecieve(unsigned rob_entry, unsigned address);
 	unsigned read(unsigned address);
 	void write(unsigned data, unsigned address);
+	void checkout(unsigned data, unsigned address);
+
 	void clear(unsigned address);
 	unsigned getDestination(unsigned address);
 
@@ -163,6 +166,8 @@ public:
 
 	int read(unsigned address);
 	void write(int data, unsigned address);
+	void checkout(unsigned data, unsigned address);
+
 	void clear(unsigned address);
 	unsigned getDestination(unsigned address);
 
@@ -230,116 +235,81 @@ private:
 	std::vector<ReservationStation *> station_file;
 };
 
-
-//collection of integer units. Assigns instruction operation to units available within 
-//the integer file. If none are available, throws a hardware exception
-class IntegerFile {
-
-	//integer unit will snag operands from the instruction -> instruction can move on to write back stage
+//parent class for execution units
+class ExecUnitFile{
+	//exec unit will snag operands from the instruction -> instruction can move on to write back stage
 	//BUT, instruction will not be able to read from unit until operation latency is exhausted
 	//integer unit will throw exceptions if written to or read from while it is processing
 	//stores rob destination from instruction because there may be multiple units
-
-	class Integer : public Lock{
+protected:
+	
+	class Exec : public Lock{
+	protected:
 		unsigned op1;
 		unsigned op2;
-		integer_t op_type;
+		operation_t op_type;
 
 	public:
-		Integer(unsigned latency);
-		void push_operands(int op1, int op2, integer_t op_type, unsigned dest);
-		int operate();
+		Exec(unsigned latency);
+		void push_operands(unsigned op1, unsigned op2, operation_t op_type, unsigned dest);
+		virtual unsigned operate() = 0;
+
 		unsigned dest; //rob destination to be broadcast on CDB, comes from reservation station
 	};
 
-public:
-	IntegerFile(unsigned num_units, unsigned latency);
-	void assign(int op1, int op2, integer_t op_type, unsigned dest); //sees if empty unit, throws exception if not. Latency countdown starts after this
-	void alert();
-	int checkout(unsigned rob_dest);//sees is result is ready for specific rob_dest. Throws hardware exception if not
-
-private:
-	std::vector<Integer*> int_file;
+	std::vector<Exec*> exec_file;
 	unsigned num_units;
+
+public:
+	ExecUnitFile(unsigned num_units, unsigned latency);
+	void assign(unsigned op1, unsigned op2, operation_t op_type, unsigned dest); //sees if empty unit, throws exception if not. Latency countdown starts after this
+	void alert();
+	unsigned checkout(unsigned rob_dest);//sees is result is ready for specific rob_dest. Throws hardware exception if not
+
+
 };
 
+class IntegerFile : public ExecUnitFile{
+	class Integer : public Exec{
+	public:
+		Integer(unsigned latency);
+		unsigned operate();
+	};
+public:
+	IntegerFile(unsigned num_units, unsigned latency);
+};
 
-
-class AdderFile {
-	class Adder : public Lock{
-		unsigned op1;
-		unsigned op2;
-
+class AdderFile : public ExecUnitFile {
+	class Adder : public Exec{
 	public:
 		Adder(unsigned latency);
-		void push_operands(int op1, int op2, unsigned dest);
-		float operate();
-		unsigned dest; //rob destination to be broadcast on CDB, comes from reservation station
+		unsigned operate();
 	};
 
 public:
 	AdderFile(unsigned num_units, unsigned latency);
-	void assign(int op1, int op2, unsigned dest); //sees if empty unit, throws exception if not. Latency countdown starts after this
-
-	float checkout(unsigned rob_dest);//sees is result is ready for specific rob_dest. Throws hardware exception if not
-	void alert();
-
-private:
-	std::vector<Adder*> adder_file;
-	unsigned num_units;
 };
 
-
-
-class MultiplierFile {
-	class Multiplier : public Lock{
-		unsigned op1;
-		unsigned op2;
-
+class MultiplierFile : public ExecUnitFile {
+	class Multiplier : public Exec{
 	public:
 		Multiplier(unsigned latency);
-		void push_operands(int op1, int op2, unsigned dest);
-		float operate();
-		unsigned dest; //rob destination to be broadcast on CDB, comes from reservation station
+		unsigned operate();
 	};
 
 public:
 	MultiplierFile(unsigned num_units, unsigned latency);
-	void assign(int op1, int op2, unsigned dest); //sees if empty unit, throws exception if not. Latency countdown starts after this
-	void alert();
-	float checkout(unsigned rob_dest);//sees is result is ready for specific rob_dest. Throws hardware exception if not
-
-private:
-	std::vector<Multiplier*> multiplier_file;
-	unsigned num_units;
 };
 
-
-
-
-class DividerFile {
-	class Divider : public Lock{
-		int op1;
-		int op2;
-
+class DividerFile : public ExecUnitFile {
+	class Divider : public Exec{
 	public:
 		Divider(unsigned latency);
-		void push_operands(int op1, int op2, unsigned dest);
-		float operate();
-		unsigned dest; //rob destination to be broadcast on CDB, comes from reservation station
+		unsigned operate();
 	};
 
 public:
 	DividerFile(unsigned num_units, unsigned latency);
-	void assign(int op1, int op2, unsigned dest); //sees if empty unit, throws exception if not. Latency countdown starts after this
-	void alert();
-	float checkout(unsigned rob_dest);//sees is result is ready for specific rob_dest. Throws hardware exception if not
-
-private:
-	std::vector<Divider*> divider_file;
-	unsigned num_units;
 };
-
-
 
 #endif

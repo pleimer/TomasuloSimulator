@@ -25,7 +25,8 @@ class InstructionQueue {
 public:
 	InstructionQueue(unsigned queueSize);
 	void push(Instruction* inst);
-	Instruction * pop();
+	void pop();
+	Instruction * fetch();
 	bool isFull();
 
 	void alert();

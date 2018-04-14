@@ -21,6 +21,7 @@ class InstructionEmpty : public std::exception {//thrown when there is nothing l
 	}
 };
 
+
 class Instruction { //super class that shows all data types and functions an instruction must have
 
 protected:
@@ -47,7 +48,9 @@ public:
 	//Assess() handles the proper, sequential execution of each instruction phase
 	//does not advance to the next stage if exception is thrown
 	void assess();
+	void setStage(stage_t stage);
 	stage_t getStage();
+	unsigned getPC();
 
 	//pipeline stages
 	virtual void issue();

@@ -34,6 +34,7 @@ Instruction* InstructionMemory::fetch(unsigned addrPtr, Pipeline * pl){
 	for (int i = 0; i<4; i++){
 		bit_inst = bit_inst | (inst_memory[addrPtr + i] << (3 - i) * 8);
 	}
+	if (bit_inst == UNDEFINED) throw HardwareException("Inst Mem");
 	opcode_t opcode = OPCODE(bit_inst);
 	return Instruction_Factory::Get()->Create_Instruction(opcode, bit_inst, pl);
 }
@@ -58,11 +59,12 @@ void InstructionQueue::push(Instruction * inst){
 	else throw HardwareException("Inst Queue");
 }
 
-Instruction * InstructionQueue::pop(){
-	Instruction *i = q.front();
+void InstructionQueue::pop(){
 	q.pop();
+}
 
-	return i;
+Instruction * InstructionQueue::fetch(){
+		return q.front();
 }
 
 bool InstructionQueue::isFull(){
@@ -78,6 +80,7 @@ Controller::Controller(unsigned inst_queue_size, Pipeline * pl) {
 
 void Controller::execute(){
 	Instruction * instruction;
+	bool issueSuccess;
 	try{
 		while (true){ //fill inst queue whenever it starts to empty
 			instruction = inst_memory->fetch(pl->pc.get(), pl);
@@ -87,29 +90,62 @@ void Controller::execute(){
 	}
 	catch (exception &e){}
 
-	try{
-		instruction = inst_queue->pop();
-		//put on running_inst stack, then run through that stack and assess() every instruction in it
-		running_inst.push_back(instruction);
-		setInInstStageOrder(running_inst);
+	instruction = inst_queue->fetch();
+	//put on running_inst stack, then run through that stack and assess() every instruction in it
+	//if issue() fails, do not pop another instruction
+	
+	//have to do commit stage before issue
 
-		for (unsigned i=0; i < running_inst.size(); i++){
-			try{
-				cout << "Instruction being assessed: ";
-				running_inst[i]->print();
+	for (unsigned i = 0; i < running_inst.size(); i++){
+		try{
+			if (running_inst[i]->getStage() == COMMIT){
 				running_inst[i]->assess();
-			}
-			catch (InstructionEmpty& ie){
-				cout << "deleted" << endl;
-				running_inst.erase(running_inst.begin() + i);
-				i--;
+				// only one that should commit is at head
 			}
 		}
+		catch (exception &e){}
+	}
+	
+	
 
+	try{
+		instruction->issue();
+
+		//is if issue successful:
+		inst_queue->pop();
+		issueSuccess = true;
 	}
 	catch (exception &e){
+		issueSuccess = false;
 		cerr << e.what();
 	}
+
+
+
+	for (unsigned i=0; i < running_inst.size(); i++){
+		try{
+			cout << "Instruction being assessed: ";
+			running_inst[i]->print();
+			running_inst[i]->assess();
+		}
+		catch (InstructionEmpty& ie){
+			cout << "deleted" << endl;
+			running_inst.erase(running_inst.begin() + i);
+			i--;
+		}
+
+		
+	}
+
+	if (issueSuccess){ //this is here because it must take place next clock cycle
+		running_inst.push_back(instruction);
+		setInInstStageOrder(running_inst);
+		instruction->setStage(EXECUTE);
+	}
+
+
+
+	
 }
 
 unsigned char * Controller::inst_mem_base(){

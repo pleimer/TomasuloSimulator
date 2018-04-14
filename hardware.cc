@@ -16,6 +16,12 @@ IMPLEMENT: On HardwareExceptions, show info on what unit the exception occurred
 
 using namespace std;
 
+inline unsigned float2unsigned(float value){
+	unsigned result;
+	memcpy(&result, &value, sizeof value);
+	return result;
+}
+
 /* convert integer into array of unsigned char - little indian */
 inline void unsigned2char(unsigned value, unsigned char *buffer){
 	buffer[0] = value & 0xFF;
@@ -27,6 +33,13 @@ inline void unsigned2char(unsigned value, unsigned char *buffer){
 /* convert array of char into integer - little indian */
 inline unsigned char2unsigned(unsigned char *buffer){
 	return buffer[0] + (buffer[1] << 8) + (buffer[2] << 16) + (buffer[3] << 24);
+}
+
+/* convert an unsigned into a float */
+inline float unsigned2float(unsigned value){
+	float result;
+	memcpy(&result, &value, sizeof value);
+	return result;
 }
 
 
@@ -76,6 +89,7 @@ bool Lock::countLock(){
 
 
 void ProgramCounter::pulse(){
+	cout << "PC: " << hex << addrPtr << endl;
 	addrPtr += 4; //one instruction
 }
 
@@ -101,6 +115,7 @@ unsigned AddressUnit::calc_EMA(int imm, int reg_val){
 
 
 ReorderBuffer::ReorderBuffer(unsigned rob_size){
+	latency = 0;
 	this->rob_size = rob_size;
 	head = 0;
 	for (unsigned i = 0; i < rob_size; i++){
@@ -125,12 +140,17 @@ unsigned ReorderBuffer::push(unsigned pc, reg_t data_type, unsigned dest){
 			entry_file[insert_index]->data_type = data_type;
 			entry_file[insert_index]->dest = dest;
 			entry_file[insert_index]->busy = true;
+			entry_file[insert_index]->stage = ISSUE;
 			break;
 		}
 		insert_index++;
 		if (insert_index >= entry_file.size()) insert_index = 0;
 	}
 	return insert_index;
+}
+
+void ReorderBuffer::clear(unsigned entry){
+	entry_file[entry]->clear();
 }
 
 void ReorderBuffer::update(unsigned dest, unsigned value){
@@ -171,6 +191,7 @@ reg_t ReorderBuffer::getDataType(){
 vector<unsigned> ReorderBuffer::fetch(unsigned rob_entry){
 	if (head != rob_entry) throw HardwareException("Not head");
 	if (!entry_file[head]->ready) throw InstException();
+	countLock();
 	vector<unsigned> return_items;
 
 	return_items.push_back(entry_file[head]->value);
@@ -225,7 +246,9 @@ void ReorderBuffer::print(){
 		}
 
 		if (!(entry_file[i]->value == UNDEFINED)) {
-			ss << "x" << setw(8) << setfill('0') << hex << entry_file[i]->value;
+			ss.str(""); //don't forget to clear the string stream!!!
+			ss.clear();
+			ss << "0x" << setw(8) << setfill('0') << hex << entry_file[i]->value;
 			value = ss.str();
 		}
 			
@@ -265,6 +288,15 @@ void FPRegisterUnit::write(unsigned data, unsigned address){
 	register_file[address]->rob_dest = UNDEFINED;
 }
 
+void FPRegisterUnit::checkout(unsigned data, unsigned rob_dest){
+	for (unsigned i = 0; i < register_file.size(); i++){
+		if (register_file[i]->rob_dest == rob_dest) {
+			register_file[i]->data = data;
+			register_file[i]->rob_dest = UNDEFINED;
+		}
+	}
+}
+
 void FPRegisterUnit::clear(unsigned address){
 	register_file[address]->data = UNDEFINED;
 	register_file[address]->rob_dest = UNDEFINED;
@@ -301,6 +333,15 @@ int IntRegisterUnit::read(unsigned address){
 
 void IntRegisterUnit::write(int data, unsigned address){
 	register_file[address]->data = data;
+}
+
+void IntRegisterUnit::checkout(unsigned data, unsigned rob_dest){
+	for (unsigned i = 0; i < register_file.size(); i++){
+		if (register_file[i]->rob_dest == rob_dest) {
+			register_file[i]->data = data;
+			register_file[i]->rob_dest = UNDEFINED;
+		}
+	}
 }
 
 void IntRegisterUnit::clear(unsigned address){
@@ -510,34 +551,32 @@ void ReservationStationUnit::print(){
 }
 
 
-IntegerFile::IntegerFile(unsigned num_ints, unsigned latency){
-	num_units = num_ints;
-	for (unsigned i = 0; i < num_ints; i++){
-		int_file.push_back(new Integer(latency));
-	}
+ExecUnitFile::ExecUnitFile(unsigned num_units, unsigned latency){
+	num_units = num_units;
 }
 
-IntegerFile::Integer::Integer(unsigned latency){
+ExecUnitFile::Exec::Exec(unsigned latency){
 	this->latency = latency;
 }
 
 
-void IntegerFile::assign(int op1, int op2, integer_t op_type, unsigned dest){
+void ExecUnitFile::assign(unsigned op1, unsigned op2, operation_t op_type, unsigned dest){
+	if ((op1 == UNDEFINED) || (op2 == UNDEFINED)) throw DataException();
 	//try to use first unit available
 	bool nonAvailable = true;
-	for (unsigned i = 0; i < int_file.size(); i++){
+	for (unsigned i = 0; i < exec_file.size(); i++){
 		try{
-			int_file[i]->push_operands(op1,op2,op_type,dest);
+			exec_file[i]->push_operands(op1,op2,op_type,dest);
 			nonAvailable = false;
 		}
 		catch (exception &e){
-			cerr << "Integer " << e.what();
+			cerr << "Exec " << e.what();
 		}
 	}
-	if (nonAvailable) throw HardwareException("Int");
+	if (nonAvailable) throw HardwareException("Exec");
 }
 
-void IntegerFile::Integer::push_operands(int op1, int op2, integer_t op_type, unsigned dest){
+void ExecUnitFile::Exec::push_operands(unsigned op1, unsigned op2, operation_t op_type, unsigned dest){
 	countLock();
 	this->op1 = op1;
 	this->op2 = op2;
@@ -545,200 +584,95 @@ void IntegerFile::Integer::push_operands(int op1, int op2, integer_t op_type, un
 	this->dest = dest;
 }
 
-int IntegerFile::checkout(unsigned rob_dest){
-	int result = UNDEFINED;
-	for (unsigned i = 0; i < int_file.size(); i++){
-		if (int_file[i]->dest == rob_dest) result = int_file[i]->operate();
+unsigned ExecUnitFile::checkout(unsigned rob_dest){
+	unsigned result = UNDEFINED;
+	for (unsigned i = 0; i < exec_file.size(); i++){
+		if (exec_file[i]->dest == rob_dest) result = exec_file[i]->operate();
 	}
 	return result;
 }
 
-void IntegerFile::alert(){
-	for (unsigned i = 0; i < int_file.size(); i++){
-		int_file[i]->alert();
+void ExecUnitFile::alert(){
+	for (unsigned i = 0; i < exec_file.size(); i++){
+		exec_file[i]->alert();
 	}
 }
 
-int IntegerFile::Integer::operate(){
+/*unsigned ExecUnitFile::Exec::operate(){
+	cout << "Instruction operation unavailable" << endl;
+	return 1;
+}*/
+
+IntegerFile::IntegerFile(unsigned num_units, unsigned latency): ExecUnitFile(num_units, latency){
+	for (unsigned i = 0; i < num_units; i++){
+		exec_file.push_back(new Integer(latency));
+	}
+}
+AdderFile::AdderFile(unsigned num_units, unsigned latency) : ExecUnitFile(num_units, latency){
+	for (unsigned i = 0; i < num_units; i++){
+		exec_file.push_back(new Adder(latency));
+	}
+}
+MultiplierFile::MultiplierFile(unsigned num_units, unsigned latency) : ExecUnitFile(num_units, latency){
+	for (unsigned i = 0; i < num_units; i++){
+		exec_file.push_back(new Multiplier(latency));
+	}
+}
+DividerFile::DividerFile(unsigned num_units, unsigned latency) : ExecUnitFile(num_units, latency){
+	for (unsigned i = 0; i < num_units; i++){
+		exec_file.push_back(new Divider(latency));
+	}
+}
+
+IntegerFile::Integer::Integer(unsigned latency) : Exec(latency){}
+AdderFile::Adder::Adder(unsigned latency) : Exec(latency){}
+MultiplierFile::Multiplier::Multiplier(unsigned latency) : Exec(latency){}
+DividerFile::Divider::Divider(unsigned latency) : Exec(latency){}
+
+
+/*--------------------------------------------------------------------------------------------*/
+
+unsigned IntegerFile::Integer::operate(){
 		countLock();
+		int op1 = (int) this->op1;
+		int op2 = (int) this->op2;
 		switch (op_type){
-		case AD: return op1 + op2;
-		case S: return op1 - op2;
-		case X: return op1 ^ op2;
-		case O: return op1 | op2;
-		case AN: return op1 & op2;
+		case AD: return (unsigned) (op1 + op2);
+		case S: return (unsigned) (op1 - op2);
+		case X: return (unsigned) (op1 ^ op2);
+		case O: return (unsigned) (op1 | op2);
+		case AN: return (unsigned) (op1 & op2);
 		default: break;
 		}
 	}
 
 
-/*--------------------------------------------------------------------------------------------*/
 
-AdderFile::AdderFile(unsigned num_ints, unsigned latency){
-	num_units = num_ints;
-	for (unsigned i = 0; i < num_ints; i++){
-		adder_file.push_back(new Adder(latency));
-	}
-}
-
-AdderFile::Adder::Adder(unsigned latency){
-	this->latency = latency;
-}
-
-
-void AdderFile::assign(int op1, int op2, unsigned dest){
-	//try to use first unit available
-	if ((op1 == UNDEFINED) || (op2 == UNDEFINED)) throw DataException();
-	bool nonAvailable = true;
-	for (unsigned i = 0; i < adder_file.size(); i++){
-		try{
-			adder_file[i]->push_operands(op1, op2, dest);
-			nonAvailable = false;
-		}
-		catch (exception &e){
-			cerr << "Adder " << e.what();
-		}
-	}
-	if (nonAvailable) throw HardwareException("Adder");
-}
-
-void AdderFile::Adder::push_operands(int op1, int op2, unsigned dest){
+unsigned AdderFile::Adder::operate(){
 	countLock();
-	this->op1 = op1;
-	this->op2 = op2;
-	this->dest = dest;
-}
-
-float AdderFile::checkout(unsigned rob_dest){
-	float result = UNDEFINED;
-	for (unsigned i = 0; i < adder_file.size(); i++){
-		if (adder_file[i]->dest == rob_dest) result = adder_file[i]->operate();
-	}
-	return result;
-}
-
-void AdderFile::alert(){
-	for (unsigned i = 0; i < adder_file.size(); i++){
-		adder_file[i]->alert();
+	float op1 = unsigned2float(this->op1);
+	float op2 = unsigned2float(this->op2);
+	switch (op_type){
+	case AD:
+		return float2unsigned(op1 + op2);
+	case S:
+		return float2unsigned(op1 - op2);
 	}
 }
 
-float AdderFile::Adder::operate(){
+unsigned MultiplierFile::Multiplier::operate(){
 	countLock();
-	return op1 + op2;
+	float op1 = unsigned2float(this->op1);
+	float op2 = unsigned2float(this->op2);
+	return float2unsigned(op1 * op2);
 }
 
 
-/*--------------------------------------------------------------------------------------------*/
-
-MultiplierFile::MultiplierFile(unsigned num_ints, unsigned latency){
-	num_units = num_ints;
-	for (unsigned i = 0; i < num_ints; i++){
-		multiplier_file.push_back(new Multiplier(latency));
-	}
-}
-
-MultiplierFile::Multiplier::Multiplier(unsigned latency){
-	this->latency = latency;
-}
-
-
-void MultiplierFile::assign(int op1, int op2, unsigned dest){
-	//try to use first unit available
-	bool nonAvailable = true;
-	for (unsigned i = 0; i < multiplier_file.size(); i++){
-		try{
-			multiplier_file[i]->push_operands(op1, op2, dest);
-			nonAvailable = false;
-		}
-		catch (exception &e){
-			cerr << "Multiplier "<< e.what();
-		}
-	}
-	if (nonAvailable) throw HardwareException("Mult");
-}
-
-void MultiplierFile::Multiplier::push_operands(int op1, int op2, unsigned dest){
+unsigned DividerFile::Divider::operate(){
 	countLock();
-	this->op1 = op1;
-	this->op2 = op2;
-	this->dest = dest;
-}
-
-float MultiplierFile::checkout(unsigned rob_dest){
-	float result = UNDEFINED;
-	for (unsigned i = 0; i < multiplier_file.size(); i++){
-		if (multiplier_file[i]->dest == rob_dest) result = multiplier_file[i]->operate();
-	}
-	return result;
-}
-
-void MultiplierFile::alert(){
-	for (unsigned i = 0; i < multiplier_file.size(); i++){
-		multiplier_file[i]->alert();
-	}
-}
-
-float MultiplierFile::Multiplier::operate(){
-	countLock();
-	cout << "Mult operate" << endl;
-	return op1 * op2;
-}
-
-
-/*--------------------------------------------------------------------------------------------*/
-
-DividerFile::DividerFile(unsigned num_ints, unsigned latency){
-	num_units = num_ints;
-	for (unsigned i = 0; i < num_ints; i++){
-		divider_file.push_back(new Divider(latency));
-	}
-}
-
-DividerFile::Divider::Divider(unsigned latency){
-	this->latency = latency;
-}
-
-
-void DividerFile::assign(int op1, int op2, unsigned dest){
-	//try to use first unit available
-	bool nonAvailable = true;
-	for (unsigned i = 0; i < divider_file.size(); i++){
-		try{
-			divider_file[i]->push_operands(op1, op2, dest);
-			nonAvailable = false;
-		}
-		catch (exception &e){
-			cerr << "Divider " << e.what();
-		}
-	}
-	if (nonAvailable) throw HardwareException("Div");
-}
-
-void DividerFile::Divider::push_operands(int op1, int op2, unsigned dest){
-	countLock();
-	this->op1 = op1;
-	this->op2 = op2;
-	this->dest = dest;
-}
-
-float DividerFile::checkout(unsigned rob_dest){
-	float result = UNDEFINED;
-	for (unsigned i = 0; i < divider_file.size(); i++){
-		if (divider_file[i]->dest == rob_dest) result = divider_file[i]->operate();
-	}
-	return result;
-}
-
-void DividerFile::alert(){
-	for (unsigned i = 0; i < divider_file.size(); i++){
-		divider_file[i]->alert();
-	}
-}
-
-float DividerFile::Divider::operate(){
-	countLock();
-	return op1 / op2;
+	float op1 = unsigned2float(this->op1);
+	float op2 = unsigned2float(this->op2);
+	return float2unsigned(op1 / op2);
 }
 
 

@@ -109,8 +109,15 @@ void sim_ooo::run(unsigned cycles){
 		}
 		else{
 			while (true){
-				pipeline->cycle();
-				controller->execute();
+				try{
+					pipeline->cycle();
+					controller->execute();
+				}
+				catch (EndOfProgram &e){
+					cout << "Reached EOP" << endl;
+					break;
+				}
+
 			}
 		}
 	}
@@ -225,14 +232,16 @@ void sim_ooo::print_log(){
 }
 
 float sim_ooo::get_IPC(){
-	return UNDEFINED; //fill here
+	float inst_exec = unsigned2float(controller->getInstExecuted());
+	float cycles = unsigned2float(pipeline->getCycles());
+	return inst_exec/cycles; //fill here
 }
 	
 unsigned sim_ooo::get_instructions_executed(){
-	return UNDEFINED; //fill here
+	return controller->getInstExecuted(); //fill here
 }
 
 unsigned sim_ooo::get_clock_cycles(){
-	return UNDEFINED; //fill here
+	return pipeline->getCycles(); //fill here
 }
 

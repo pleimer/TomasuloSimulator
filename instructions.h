@@ -15,9 +15,15 @@
 
 #define OPCODE(X) ((opcode_t)((X & 0xFC000000) >> (INST_SIZE-OP_SIZE)))
 
+class BranchException : public std::exception {//thrown when there is nothing left for instruction to do
+	const char * what() const throw(){
+		return  "Branch\n";
+	}
+};
+
 class InstructionEmpty : public std::exception {//thrown when there is nothing left for instruction to do
 	const char * what() const throw(){
-		return ""; // "Instruction empty\n";
+		return  "Instruction empty\n";
 	}
 };
 
@@ -49,7 +55,6 @@ protected:
 	unsigned int RT;
 
 	unsigned arith_result;
-
 
 public:
 	Instruction(int bit_inst, Pipeline * pl);

@@ -30,21 +30,21 @@ public:
 	HardwareException(const std::string& obj) :m_msg(obj + " unit busy\n"){}
 	~HardwareException() throw() {}
 	const char * what() const throw(){
-		return "";// m_msg.c_str();
+		return m_msg.c_str();
 	}
 };
 
 class DataException : public std::exception{
 public:
 	const char * what() const throw(){
-		return "";//"Data invalid\n";
+		return "Data invalid\n";
 	}
 };
 
 class InstException : public std::exception{
 public:
 	const char * what() const throw(){
-		return ""; // "Instruction not ready\n";
+		return "Instruction not ready\n";
 	}
 };
 
@@ -111,10 +111,12 @@ public:
 	void pushHead();
 	unsigned push(unsigned pc, reg_t data_type, unsigned dest);
 	void clear(unsigned entry);
+	void clearAll();
 	void update(unsigned dest, unsigned value);
 	void updateState(unsigned entry, stage_t stage);
 
 	reg_t getDataType();
+	std::vector<unsigned> getDestByType(unsigned pc_init,reg_t data_type); //gets all destinations by type between pc_init and head
 	std::vector<unsigned> fetch(unsigned rob_entry);
 	void print();
 
@@ -144,13 +146,24 @@ public:
 	void write(unsigned data, unsigned address);
 	void checkout(unsigned data, unsigned address);
 
+	void takeSnapshot();
+	void restore(std::vector<unsigned> replace, std::vector<unsigned> results);
+
 	void clear(unsigned address);
 	unsigned getDestination(unsigned address);
 
 	void reset();
 
+	//for restoring previous states
+	void pushRestoreBuffer(unsigned regNum, unsigned data);
+	std::vector<unsigned> getRestoreData(std::vector<unsigned> regs); //returns most recent data for each result destined by entries in regs in regs order
+	void clearRestoreBuffer();
+
 private:
 	std::vector<FPRegister*> register_file;
+
+	std::vector<FPRegister*> restore_file;
+	std::vector<FPRegister*> results_buffer;
 };
 
 
@@ -224,6 +237,8 @@ public:
 	ReservationStationUnit(unsigned num_stations, std::string name);//build unit and assign name_n to each entry
 
 	void clear(unsigned entry); //clears an entry
+	void clearAll();
+
 	unsigned * getVV(unsigned entry); //get vj and vk at rsu_entry
 	void checkout(unsigned rob_entry, unsigned data); //is ROB entry in here, if so replaces inserts data
 	

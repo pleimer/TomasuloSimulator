@@ -25,6 +25,7 @@ class InstructionQueue {
 public:
 	InstructionQueue(unsigned queueSize);
 	void push(Instruction* inst);
+	void clear();
 	void pop();
 	Instruction * fetch();
 	bool isFull();
@@ -38,12 +39,16 @@ class Controller {
 	InstructionQueue * inst_queue;
 	std::vector<Instruction *>  running_inst;
 
+	unsigned inst_executed;
+
 public:
 	InstructionMemory * inst_memory;
 	Controller(unsigned inst_queue_size, Pipeline * pl);
 	void execute();
 	unsigned char * inst_mem_base();
 	void setInInstStageOrder(std::vector<Instruction *> &);//sets vector of instructions in instruction stage order
+
+	unsigned getInstExecuted();
 };
 
 #endif

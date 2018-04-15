@@ -3,8 +3,12 @@
 class Pipeline{
 	class Clock {
 	public:
+		
 		void posedge(Pipeline& pipeline);
 	};
+
+	unsigned num_cycles;
+
 
 public:
 	Clock clock;
@@ -39,6 +43,8 @@ public:
 	void initialize(unsigned base_address);
 
 	void cycle();
+
+	unsigned getCycles();
 	
 
 	

@@ -93,7 +93,12 @@ void Instruction::assess(){
 	case COMMIT: 
 		try{
 			//only instruction at head of ROB should commit
-			commit();
+			try{
+				commit();
+			}
+			catch (EndOfProgram &eop){
+				throw eop;
+			}	
 			pl->ROB->updateState(rob_entry, stage);
 			throw InstructionEmpty(); //once commit properly executes, instruction is done
 		}
@@ -101,6 +106,8 @@ void Instruction::assess(){
 			cerr << he.what();
 		}
 		catch (InstException &ie){}
+
+
 		
 		break;
 	default:
@@ -140,7 +147,10 @@ void Instruction::commit(){
 
 	//registers get data from ROB and ROB pops instruction out for all instructions
 	reg_t data_type = pl->ROB->getDataType();
-	vector<unsigned> reg_items = pl->ROB->fetch(rob_entry);
+
+	vector<unsigned> reg_items = pl->ROB->fetch(rob_entry); //value, reg with that rob_entry
+	
+
 	switch (data_type){
 	case R:
 		pl->intregisters->checkout(reg_items[0], rob_entry);
@@ -149,6 +159,9 @@ void Instruction::commit(){
 		pl->fpregisters->checkout(reg_items[0], rob_entry); //value, reg with that rob_entry
 		break;
 	}
+
+	pl->fpregisters->pushRestoreBuffer(RD,reg_items[0]); //the value
+
 	cout << "SUCCESS" << endl;
 	return;
 }
@@ -350,6 +363,7 @@ public:
 
 class BEQZ : public Instruction {
 	bool branch;
+	vector<unsigned> fpDestinations;
 public:
 	BEQZ(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
 		type = "BEQZ";
@@ -368,6 +382,12 @@ public:
 			pl->ROB->clear(rob_entry);
 			throw HardwareException("RSU");
 		}
+
+		
+		//take snapshot, store all registers marked as destination for restore later
+		pl->fpregisters->takeSnapshot();
+		fpDestinations = pl->ROB->getDestByType(pc_init,F);
+
 		cout << "SUCCESS" << endl;
 
 	}
@@ -376,7 +396,7 @@ public:
 		unsigned * fromRS = pl->int_RSU->getVV(RSU_entry);
 
 		//send to execution unit (excpetion thrown if data undefined)
-		pl->int_file->assign(fromRS[0], immediate, AD, rob_entry);
+		pl->int_file->assign(pc_init, 4* immediate, AD, rob_entry);  //four bytes per instruction
 	}
 
 	void write_result(){
@@ -385,7 +405,8 @@ public:
 		int target_addr = pl->int_file->checkout(rob_entry);
 
 		unsigned * fromRS = pl->int_RSU->getVV(RSU_entry); //get vj, vk
-		if (fromRS[0] == 0){
+		
+		if (fromRS[0] == 0){//branch condition
 			pl->ROB->update(rob_entry, (unsigned) target_addr);	
 			branch = true;
 		}
@@ -399,11 +420,23 @@ public:
 
 	void commit(){
 		cout << "COMMIT" << endl;
-		vector<unsigned> ret_vals = pl->ROB->fetch(rob_entry);
+		vector<unsigned> ret_vals = pl->ROB->fetch(rob_entry); //value, dest
+		
 		if (branch) {
 			pl->pc.load(ret_vals[0]);
-			//clear all entries in ROB
+			pl->ROB->clearAll();//clear all entries in ROB
+			pl->adder_RSU->clearAll();
+			pl->int_RSU->clearAll();
+			pl->mult_RSU->clearAll();
+			pl->load_RSU->clearAll();
+
+			vector<unsigned> restore_data = pl->fpregisters->getRestoreData(fpDestinations);
+			pl->fpregisters->restore(fpDestinations, restore_data);
+			pl->fpregisters->clearRestoreBuffer();
+			throw BranchException();
 		}
+
+
 	}
 	
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new BEQZ(bit_ins, pl); }
@@ -487,14 +520,17 @@ public:
 	}
 	void execute(){
 		cout << "EXECUTE" << endl;
+
 		return;
 	}
 	void write_result(){
 		cout << "WRITE RESULT" << endl;
+		pl->ROB->update(rob_entry, arith_result);
 		return;
 	}
 	void commit(){
 		cout << "COMMIT" << endl;
+		pl->ROB->fetch(rob_entry);
 		throw EndOfProgram();
 	}
 	
@@ -554,7 +590,6 @@ public:
 		//free all hardware units here
 		pl->adr_unit.free();
 		
-
 		cout << "SUCCESS" << endl;
 	}
 	
@@ -697,6 +732,7 @@ public:
 		//send result to ROB
 		pl->ROB->update(rob_entry, arith_result);
 
+		
 	}
 	
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new SUBS(bit_ins, pl); }

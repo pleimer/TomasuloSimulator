@@ -152,6 +152,11 @@ void ReorderBuffer::clear(unsigned entry){
 	entry_file[entry]->clear();
 }
 
+void ReorderBuffer::clearAll(){
+	for (unsigned i = 0; i < entry_file.size(); i++)entry_file[i]->clear();
+	head = 0;
+}
+
 void ReorderBuffer::update(unsigned dest, unsigned value){
 	entry_file[dest]->value = value;
 	entry_file[dest]->ready = true;
@@ -187,8 +192,24 @@ reg_t ReorderBuffer::getDataType(){
 	return entry_file[head]->data_type;
 }
 
+vector<unsigned> ReorderBuffer::getDestByType(unsigned pc_init,reg_t data_type){
+	vector<unsigned> destList;
+	unsigned aftrHead = head;
+
+	for (unsigned i = head; entry_file[i]->pc != pc_init; i++){
+		if (entry_file[i]->data_type = data_type){
+			destList.push_back(entry_file[i]->dest);
+		}
+		if (i >= entry_file.size()) i = 0;
+	}
+	return destList;
+}
+
+
+
 vector<unsigned> ReorderBuffer::fetch(unsigned rob_entry){
 	if (head != rob_entry) throw HardwareException("Not head");
+
 	if (!entry_file[head]->ready) throw InstException();
 	countLock();
 	vector<unsigned> return_items;
@@ -206,7 +227,7 @@ void ReorderBuffer::pushHead(){
 }
 
 void ReorderBuffer::print(){
-	string busy, ready, pc, stage, dest, value, reg;
+	string busy, ready, pc, stage, dest, value, reg, head;
 	stringstream ss;
 
 	for (unsigned i = 0; i < entry_file.size();i++){
@@ -217,6 +238,7 @@ void ReorderBuffer::print(){
 		dest = "-";
 		value = "-";
 		reg = " ";
+		head = "";
 
 		if (entry_file[i]->busy) busy = "yes";
 
@@ -250,10 +272,15 @@ void ReorderBuffer::print(){
 			ss << "0x" << setw(8) << setfill('0') << hex << entry_file[i]->value;
 			value = ss.str();
 		}
+
+		if (i == this->head){
+			head = "<-";
+		}
+		else head = "";
 			
 
 		cout << setfill(' ') << setw(5) << entry_file[i]->entry << setw(6) << busy << setw(7) << ready;
-		cout << setw(12) << pc << setw(10) << stage << setw(5) << reg << dest << setw(12) << value << endl;
+		cout << setw(12) << pc << setw(10) << stage << setw(5) << reg << dest << setw(12) << value << head << endl;
 
 	}
 
@@ -296,6 +323,30 @@ void FPRegisterUnit::checkout(unsigned data, unsigned rob_dest){
 	}
 }
 
+void FPRegisterUnit::takeSnapshot(){
+	restore_file.clear();
+	for (unsigned i = 0; i < register_file.size(); i++){
+		restore_file.push_back(new FPRegister);
+		restore_file[i]->register_number = register_file[i]->register_number;
+		restore_file[i]->data = register_file[i]->data;
+		restore_file[i]->rob_dest = register_file[i]->rob_dest;
+	}
+}
+
+void FPRegisterUnit::restore(vector<unsigned> replace, vector<unsigned> results){
+	int j = 0;
+	for (unsigned i = 0; i < register_file.size(); i++){
+		if (i != replace[j]){ //replace has reg numbers that we want to store results in
+			register_file[i] = restore_file[i];
+		}
+		else{
+			register_file[i]->data = results[j];
+			register_file[i]->rob_dest = UNDEFINED;
+			j++;
+		}	
+	}
+}
+
 void FPRegisterUnit::clear(unsigned address){
 	register_file[address]->data = UNDEFINED;
 	register_file[address]->rob_dest = UNDEFINED;
@@ -310,6 +361,35 @@ void FPRegisterUnit::reset(){
 		register_file[i]->data = UNDEFINED;
 		register_file[i]->rob_dest = UNDEFINED;
 	}
+}
+
+void FPRegisterUnit::pushRestoreBuffer(unsigned regNum, unsigned data){
+	results_buffer.push_back(new FPRegister);
+	results_buffer[results_buffer.size() - 1]->data = data;
+	results_buffer[results_buffer.size() - 1]->register_number = regNum;
+	results_buffer[results_buffer.size() - 1]->rob_dest = UNDEFINED;
+}
+std::vector<unsigned> FPRegisterUnit::getRestoreData(std::vector<unsigned> regs){
+	vector<unsigned> results;
+
+	int i = results_buffer.size() - 1;
+	int numRecieved = regs.size();
+	for (i; i >= 0; i--){
+		if (numRecieved <= 0) break;
+		for (int j = 0; j < regs.size(); j++){
+			if (results_buffer[i]->register_number = regs[j]){
+				results.insert(results.begin(), results_buffer[i]->data);
+				numRecieved--;
+				j++;
+			}
+		}
+	}
+
+	return results;
+}
+
+void FPRegisterUnit::clearRestoreBuffer(){
+	results_buffer.clear();
 }
 
 /*----------------------------------------Int Register Unit ---------------------------------------------*/
@@ -403,6 +483,10 @@ ReservationStationUnit::ReservationStationUnit(unsigned num_stations, string nam
 
 void ReservationStationUnit::clear(unsigned entry){
 	station_file[entry]->clear();
+}
+
+void ReservationStationUnit::clearAll(){
+	for(unsigned i=0;i<station_file.size();i++) station_file[i]->clear();
 }
 
 void ReservationStationUnit::ReservationStation::clear(){

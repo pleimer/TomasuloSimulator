@@ -59,12 +59,18 @@ void InstructionQueue::push(Instruction * inst){
 	else throw HardwareException("Inst Queue");
 }
 
+void InstructionQueue::clear(){
+	queue<Instruction *> empty;
+	swap(q, empty);
+}
+
 void InstructionQueue::pop(){
 	q.pop();
 }
 
 Instruction * InstructionQueue::fetch(){
-		return q.front();
+	if (q.empty()) throw HardwareException("IQ empty");
+	return q.front();
 }
 
 bool InstructionQueue::isFull(){
@@ -74,6 +80,7 @@ bool InstructionQueue::isFull(){
 
 Controller::Controller(unsigned inst_queue_size, Pipeline * pl) {
 	this->pl = pl;
+	inst_executed = 0;
 	inst_memory = new InstructionMemory((unsigned)256);
 	inst_queue = new InstructionQueue(inst_queue_size);//same size as ROB
 }
@@ -87,10 +94,22 @@ void Controller::execute(){
 			inst_queue->push(instruction);
 			pl->pc.pulse();
 		}
+
+		
 	}
 	catch (exception &e){}
 
-	instruction = inst_queue->fetch();
+	try{
+		instruction = inst_queue->fetch();
+	}
+	catch (HardwareException &he){
+		instruction = NULL;
+		cerr << he.what();
+	}
+	
+	
+
+	
 	//put on running_inst stack, then run through that stack and assess() every instruction in it
 	//if issue() fails, do not pop another instruction
 	
@@ -99,27 +118,36 @@ void Controller::execute(){
 	for (unsigned i = 0; i < running_inst.size(); i++){
 		try{
 			if (running_inst[i]->getStage() == COMMIT){
-				running_inst[i]->assess();
+				running_inst[i]->assess();		
 			}
+		}
+		catch (EndOfProgram &eop){
+			throw EndOfProgram();
 		}
 		catch (InstructionEmpty& ie){
 			cout << "deleted" << endl;
 			running_inst.erase(running_inst.begin() + i);
+			inst_executed++;
 			i--;
 		}
-		catch (exception &e) {
-			throw e;
+		catch (BranchException &be){
+			running_inst.clear();
+			inst_queue->clear();
+			return;
 		}
 	}
 	
 	
 
 	try{
-		instruction->issue();
+		if (instruction != NULL){
+			instruction->issue(); //THIS IS THE PROBLEMATIC LINE
 
-		//is if issue successful:
-		inst_queue->pop();
-		issueSuccess = true;
+			//is if issue successful:
+			inst_queue->pop();
+			issueSuccess = true;
+		}
+
 	}
 	catch (exception &e){
 		issueSuccess = false;
@@ -139,14 +167,13 @@ void Controller::execute(){
 			running_inst.erase(running_inst.begin() + i);
 			i--;
 		}
-
-		
 	}
 
 	if (issueSuccess){ //this is here because it must take place next clock cycle
 		running_inst.push_back(instruction);
 		setInInstStageOrder(running_inst);
-		instruction->setStage(EXECUTE);
+		if (instruction != NULL)
+			instruction->setStage(EXECUTE);
 	}
 
 
@@ -169,4 +196,8 @@ void Controller::setInInstStageOrder(vector<Instruction *> & running_inst){
 			}
 		}
 	}
+}
+
+unsigned Controller::getInstExecuted(){
+	return inst_executed;
 }

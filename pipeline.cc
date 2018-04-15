@@ -10,6 +10,8 @@ Pipeline::Pipeline(unsigned mem_size,
 	unsigned num_load_res_stations,
 	unsigned max_issue){
 
+	num_cycles = 0;
+
 	fpregisters = new FPRegisterUnit(32);
 	intregisters = new IntRegisterUnit(32);
 
@@ -39,6 +41,11 @@ void Pipeline::initialize(unsigned base_address){
 
 void Pipeline::cycle(){
 	clock.posedge(*this);
+	num_cycles++;
+}
+
+unsigned Pipeline::getCycles(){
+	return num_cycles-1;
 }
 
 	

@@ -363,9 +363,9 @@ public:
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new XOR(bit_ins, pl); }
 };
 
-class XORI : public Instruction {
+class XORI : public ExecIntImm {
 public:
-	XORI(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
+	XORI(int bit_inst, Pipeline * pl) : ExecIntImm(bit_inst, pl){
 		type = "XORI";
 		data_type = R;
 		RD = R1(bit_inst);
@@ -391,9 +391,9 @@ public:
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new OR(bit_ins, pl); }
 };
 
-class ORI : public Instruction {
+class ORI : public ExecIntImm {
 public:
-	ORI(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
+	ORI(int bit_inst, Pipeline * pl) : ExecIntImm(bit_inst, pl){
 		type = "ORI";
 		data_type = R;
 		RD = R1(bit_inst);
@@ -419,9 +419,9 @@ public:
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new AND(bit_ins, pl); }
 };
 
-class ANDI : public Instruction {
+class ANDI : public ExecIntImm {
 public:
-	ANDI(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
+	ANDI(int bit_inst, Pipeline * pl) : ExecIntImm(bit_inst, pl){
 		type = "ANDI";
 		data_type = R;
 		RD = R1(bit_inst);
@@ -584,45 +584,117 @@ public:
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new BNEZ(bit_ins, pl); }
 };
 
-class BLTZ : public Instruction {
+class BLTZ : public Branch {
 public:
-	BLTZ(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
+	BLTZ(int bit_inst, Pipeline * pl) : Branch(bit_inst, pl){
 		type = "BLTZ";
 		RS = R1(bit_inst);
 		immediate = bit_inst & IMM_MASK;
+	}
+
+	void write_result(){
+
+		unsigned target_addr = pl->int_file->checkout(rob_entry);
+
+		unsigned * fromRS = pl->int_RSU->getVV(RSU_entry); //get vj, vk
+
+		if (fromRS[0] < 0){//branch condition
+			pl->ROB->update(rob_entry, (unsigned)target_addr);
+			branch = true;
+		}
+		else {
+			branch = false;
+			pl->ROB->update(rob_entry, pc_init + 4);
+		}
+
+		pl->int_RSU->clear(RSU_entry);
 	}
 	
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new BLTZ(bit_ins, pl); }
 };
 
-class BGTZ : public Instruction {
+class BGTZ : public Branch {
 public:
-	BGTZ(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
+	BGTZ(int bit_inst, Pipeline * pl) : Branch(bit_inst, pl){
 		type = "BGTZ";
 		RS = R1(bit_inst);
 		immediate = bit_inst & IMM_MASK;
+	}
+
+	void write_result(){
+
+		unsigned target_addr = pl->int_file->checkout(rob_entry);
+
+		unsigned * fromRS = pl->int_RSU->getVV(RSU_entry); //get vj, vk
+
+		if (fromRS[0] > 0){//branch condition
+			pl->ROB->update(rob_entry, (unsigned)target_addr);
+			branch = true;
+		}
+		else {
+			branch = false;
+			pl->ROB->update(rob_entry, pc_init + 4);
+		}
+
+		pl->int_RSU->clear(RSU_entry);
 	}
 	
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new BGTZ(bit_ins, pl); }
 };
 
-class BLEZ : public Instruction {
+class BLEZ : public Branch {
 public:
-	BLEZ(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
+	BLEZ(int bit_inst, Pipeline * pl) : Branch(bit_inst, pl){
 		type = "BLEZ";
 		RS = R1(bit_inst);
 		immediate = bit_inst & IMM_MASK;
+	}
+
+	void write_result(){
+
+		unsigned target_addr = pl->int_file->checkout(rob_entry);
+
+		unsigned * fromRS = pl->int_RSU->getVV(RSU_entry); //get vj, vk
+
+		if (fromRS[0] <= 0){//branch condition
+			pl->ROB->update(rob_entry, (unsigned)target_addr);
+			branch = true;
+		}
+		else {
+			branch = false;
+			pl->ROB->update(rob_entry, pc_init + 4);
+		}
+
+		pl->int_RSU->clear(RSU_entry);
 	}
 	
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new BLEZ(bit_ins, pl); }
 };
 
-class BGEZ : public Instruction {
+class BGEZ : public Branch {
 public:
-	BGEZ(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
+	BGEZ(int bit_inst, Pipeline * pl) : Branch(bit_inst, pl){
 		type = "BGEZ";
 		RS = R1(bit_inst);
 		immediate = bit_inst & IMM_MASK;
+	}
+
+	void write_result(){
+
+		unsigned target_addr = pl->int_file->checkout(rob_entry);
+
+		unsigned * fromRS = pl->int_RSU->getVV(RSU_entry); //get vj, vk
+
+		if (fromRS[0] >= 0){//branch condition
+			pl->ROB->update(rob_entry, (unsigned)target_addr);
+			branch = true;
+		}
+		else {
+			branch = false;
+			pl->ROB->update(rob_entry, pc_init + 4);
+		}
+
+		pl->int_RSU->clear(RSU_entry);
 	}
 	
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new BGEZ(bit_ins, pl); }

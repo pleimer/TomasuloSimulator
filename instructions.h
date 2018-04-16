@@ -17,19 +17,19 @@
 
 class BranchException : public std::exception {//thrown when there is nothing left for instruction to do
 	const char * what() const throw(){
-		return  "Branch\n";
+		return "";// "Branch\n";
 	}
 };
 
 class InstructionEmpty : public std::exception {//thrown when there is nothing left for instruction to do
 	const char * what() const throw(){
-		return  "Instruction empty\n";
+		return "";// "Instruction empty\n";
 	}
 };
 
 class EndOfProgram : public std::exception {//thrown when there is nothing left for instruction to do
 	const char * what() const throw(){
-		return "Program over!\n"; // "Instruction empty\n";
+		return "";// "Program over!\n"; // "Instruction empty\n";
 	}
 };
 

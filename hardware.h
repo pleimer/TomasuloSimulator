@@ -38,21 +38,21 @@ public:
 	HardwareException(const std::string& obj) :m_msg(obj + " unit busy\n"){}
 	~HardwareException() throw() {}
 	const char * what() const throw(){
-		return m_msg.c_str();
+		return "";// m_msg.c_str();
 	}
 };
 
 class DataException : public std::exception{
 public:
 	const char * what() const throw(){
-		return "Data invalid\n";
+		return "";// "Data invalid\n";
 	}
 };
 
 class InstException : public std::exception{
 public:
 	const char * what() const throw(){
-		return "Instruction not ready\n";
+		return "";// "Instruction not ready\n";
 	}
 };
 

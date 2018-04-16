@@ -124,7 +124,7 @@ void Controller::execute(){
 			throw EndOfProgram();
 		}
 		catch (InstructionEmpty& ie){
-			cout << "deleted" << endl;
+//			cout << "deleted" << endl;
 			running_inst.erase(running_inst.begin() + i);
 			inst_executed++;
 			i--;
@@ -158,8 +158,8 @@ void Controller::execute(){
 
 	for (int i = 0; i < running_inst.size(); i++){ //run in issue order
 
-		cout << "Instruction being assessed: ";
-		running_inst[i]->print();
+	//	cout << "Instruction being assessed: ";
+	//	running_inst[i]->print();
 		running_inst[i]->assess();
 	}
 

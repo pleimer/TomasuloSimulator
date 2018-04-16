@@ -195,12 +195,12 @@ void assembler::assemble(string path, byte * inst_memory){
 						}
 
 						//calculate offset
-						cout << "Branch line is: " << tok->getLine() << endl;
-						cout << "The label line is: "<< labels[pos].getLine() << endl; 
+						//cout << "Branch line is: " << tok->getLine() << endl;
+						//cout << "The label line is: "<< labels[pos].getLine() << endl; 
 						offset = -1*(tok->getLine() - labels[pos].getLine());
 						offset &= LABEL_MASK;
 
-						cout << "Offset is: " << hex << offset << endl;
+						//cout << "Offset is: " << hex << offset << endl;
 						instruction = instruction | offset;
 						
 						break;

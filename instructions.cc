@@ -118,7 +118,6 @@ void Instruction::assess(){
 }
 
 void Instruction::issue(){
-	cout << "ISSUE" << endl;
 	rob_entry = pl->ROB->push(pc_init, data_type, RD);
 
 	RSU_entry = pl->int_RSU->store(pc_init, immediate, UNDEFINED, UNDEFINED, UNDEFINED, rob_entry, immediate);
@@ -126,19 +125,10 @@ void Instruction::issue(){
 	return;
 }
 
-void Instruction::execute(){
-	cout << "EXECUTE " << endl;
-	return;
-}
-
-void Instruction::write_result(){
-	//update ROB and RS with results
-
-	return;
-}
+void Instruction::execute(){}
+void Instruction::write_result(){}
 
 void Instruction::commit(){
-	cout << "COMMIT" << endl;
 
 	//free all hardware units here
 	pl->adr_unit.free();
@@ -166,11 +156,6 @@ void Instruction::commit(){
 		pl->fpregisters->pushRestoreBuffer(RD, reg_items[0]); //the value
 		break;
 	}
-
-	
-
-
-	cout << "SUCCESS" << endl;
 	return;
 }
 
@@ -225,8 +210,6 @@ public:
 	}
 
 	void issue(){
-
-		cout << "ISSUE" << endl;
 		//get operands
 		unsigned vj = pl->intregisters->read(RS);
 		unsigned vk = pl->intregisters->read(RT);
@@ -240,14 +223,12 @@ public:
 			pl->ROB->clear(rob_entry);
 			throw HardwareException("RSU");
 		}
-		cout << "SUCCESS" << endl;
 
 		//show registers where data is coming from
 		pl->intregisters->setRecieve(rob_entry, RD);
 	}
 
 	void write_result(){
-		cout << "WRITE RESULT" << endl;
 		//get result from execution unit
 		arith_result = pl->int_file->checkout(rob_entry);
 		pl->int_RSU->clear(RSU_entry);
@@ -273,8 +254,6 @@ public:
 	}
 
 	void issue(){
-
-		cout << "ISSUE" << endl;
 		//get operands
 		unsigned vj = pl->intregisters->read(RS);
 		unsigned qj = pl->intregisters->getDestination(RS);
@@ -289,15 +268,12 @@ public:
 		//inst_address, Vj, Vk, Qj, Qk, dest, address, 
 		//and tell registers where data is coming from
 		pl->intregisters->setRecieve(rob_entry, RD);
-		cout << "SUCCESS" << endl;
 	}
 
 	void write_result(){
-		cout << "WRITE RESULT" << endl;
 		//get result from execution unit
 		arith_result = pl->int_file->checkout(rob_entry);
 		pl->int_RSU->clear(RSU_entry);
-		cout << "Result: " << hex << arith_result << endl;
 
 		//checkout result value at RS that may be wating for it
 		pl->ROB->update(rob_entry, arith_result);
@@ -315,7 +291,6 @@ public:
 		type = "ADD";
 	}
 	void execute(){
-		cout << "EXECUTE" << endl;
 		//read operands
 		unsigned * fromRS = pl->int_RSU->getVV(RSU_entry);
 
@@ -333,10 +308,8 @@ public:
 	}
 
 	void execute(){
-		cout << "Execute: " << hex << pc_init << endl;
 		unsigned * fromRS = pl->int_RSU->getVV(RSU_entry);
 		pl->int_file->assign(fromRS[0], immediate, AD, rob_entry);
-		cout << "Success" << endl;
 	}
 	
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new ADDI(bit_ins, pl); }
@@ -349,7 +322,6 @@ public:
 	}
 
 	void execute(){
-		cout << "EXECUTE" << endl;
 		unsigned * fromRS = pl->int_RSU->getVV(RSU_entry);
 
 		pl->int_file->assign(fromRS[0], fromRS[1], S, rob_entry);
@@ -380,7 +352,6 @@ public:
 	}
 
 	void execute(){
-		cout << "EXECUTE" << endl;
 		unsigned * fromRS = pl->int_RSU->getVV(RSU_entry);
 
 		if (fromRS[0] == UNDEFINED) fromRS[0] = 1; //gotta cheat here
@@ -412,7 +383,6 @@ public:
 	}
 
 	void execute(){
-		cout << "EXECUTE" << endl;
 		unsigned * fromRS = pl->int_RSU->getVV(RSU_entry);
 
 		pl->int_file->assign(fromRS[0], fromRS[1], O, rob_entry);
@@ -441,7 +411,6 @@ public:
 	}
 
 	void execute(){
-		cout << "EXECUTE" << endl;
 		unsigned * fromRS = pl->int_RSU->getVV(RSU_entry);
 
 		pl->int_file->assign(fromRS[0], fromRS[1], AN, rob_entry);
@@ -502,7 +471,7 @@ public:
 	}
 
 	void issue(){
-		cout << "ISSUE" << endl;
+
 		unsigned vj = pl->intregisters->read(RS);
 		unsigned qj = pl->intregisters->getDestination(RS);
 
@@ -521,8 +490,6 @@ public:
 		pl->intregisters->takeSnapshot();
 		intDestinations = pl->ROB->getDestByType(pc_init, R);
 
-		cout << "SUCCESS" << endl;
-
 	}
 
 	void execute(){
@@ -535,7 +502,7 @@ public:
 
 
 	void commit(){
-		cout << "COMMIT" << endl;
+
 		vector<unsigned> ret_vals = pl->ROB->fetch(rob_entry); //value, dest
 		
 		if (branch) {
@@ -568,7 +535,6 @@ public:
 	}
 
 	void write_result(){
-		cout << "WRITE RESULT" << endl;
 
 		unsigned target_addr = pl->int_file->checkout(rob_entry);
 
@@ -597,7 +563,6 @@ public:
 	}
 
 	void write_result(){
-		cout << "WRITE RESULT" << endl;
 
 		unsigned target_addr = pl->int_file->checkout(rob_entry);
 
@@ -680,22 +645,17 @@ public:
 	}
 
 	void issue(){
-		cout << "ISSUE" << endl;
 		rob_entry = pl->ROB->push(pc_init, (reg_t) UNDEFINED, UNDEFINED);
 		return;
 	}
 	void execute(){
-		cout << "EXECUTE" << endl;
-
 		return;
 	}
 	void write_result(){
-		cout << "WRITE RESULT" << endl;
 		pl->ROB->update(rob_entry, arith_result);
 		return;
 	}
 	void commit(){
-		cout << "COMMIT" << endl;
 		pl->ROB->fetch(rob_entry);
 		throw EndOfProgram();
 	}
@@ -715,7 +675,6 @@ public:
 	}
 
 	void issue(){ //exceptions are thrown by hardware
-		cout << "ISSUE" << endl;
 
 		unsigned vj = pl->intregisters->read(RS);
 		unsigned qj = pl->intregisters->getDestination(RS);
@@ -730,25 +689,19 @@ public:
 		//inst_address, Vj, Vk, Qj, Qk, dest, address, 
 		//and tell registers where data is coming from
 		pl->fpregisters->setRecieve(rob_entry, RD);
-		cout << "SUCCESS" << endl;
 	}
 
 	void execute(){
-		cout << "EXECUTE" << endl;
 		//update address <- EMA
 		//load data from mem
 		int rVal = pl->intregisters->read(RS);
 		EMA = pl->adr_unit.calc_EMA(immediate, rVal);
 
-		cout << "EMA is: " << hex << EMA << endl;
-
 		pl->load_RSU->update(EMA, RSU_entry);
-		cout << "SUCCESS" << endl;
 	}
 
 	void write_result(){
 		
-		cout << "WRITE RESULT" << endl;
 		pl->load_RSU->clear(RSU_entry);
 
 		arith_result = pl->memory_unit->readInt(EMA);
@@ -758,7 +711,6 @@ public:
 		pl->adder_RSU->checkout(rob_entry, arith_result, true);
 		pl->mult_RSU->checkout(rob_entry, arith_result, true);
 		
-		cout << "SUCCESS" << endl;
 	}
 	
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new LWS(bit_ins, pl); }
@@ -790,7 +742,6 @@ public:
 
 	void issue(){
 
-		cout << "ADDS ISSUE" << endl;
 		//get operands
 		unsigned vj = pl->fpregisters->read(RS);
 		unsigned vk = pl->fpregisters->read(RT);
@@ -804,14 +755,12 @@ public:
 			pl->ROB->clear(rob_entry);
 			throw HardwareException("RSU");
 		}
-		cout << "SUCCESS" << endl;
 
 		//show registers where data is coming from
 		pl->fpregisters->setRecieve(rob_entry, RD);
 	}
 
 	void execute(){
-		cout << "EXECUTE" << endl;
 		//read operands
 		unsigned * fromRS = pl->adder_RSU->getVV(RSU_entry);
 
@@ -820,7 +769,6 @@ public:
 	}
 
 	void write_result(){
-		cout << "WRITE RESULT" << endl;
 		//get result from execution unit
 		arith_result = pl->adder_file->checkout(rob_entry);
 		pl->adder_RSU->clear(RSU_entry);
@@ -853,7 +801,6 @@ public:
 
 	void issue(){
 
-		cout << "ISSUE" << endl;
 		//get operands
 		unsigned vj = pl->fpregisters->read(RS);
 		unsigned vk = pl->fpregisters->read(RT);
@@ -867,14 +814,12 @@ public:
 			pl->ROB->clear(rob_entry);
 			throw HardwareException("RSU");
 		}
-		cout << "SUCCESS" << endl;
 
 		//show registers where data is coming from
 		pl->fpregisters->setRecieve(rob_entry, RD);
 	}
 
 	void execute(){
-		cout << "EXECUTE" << endl;
 		//read operands"
 		unsigned * fromRS = pl->adder_RSU->getVV(RSU_entry);
 
@@ -884,7 +829,6 @@ public:
 	}
 
 	void write_result(){
-		cout << "WRITE RESULT" << endl;
 		//get result from execution unit
 		arith_result = pl->adder_file->checkout(rob_entry);
 		pl->adder_RSU->clear(RSU_entry);
@@ -918,8 +862,6 @@ public:
 	}
 
 	void issue(){
-
-		cout << "MULTS ISSUE" << endl;
 		//get operands
 		unsigned vj = pl->fpregisters->read(RS);
 		unsigned vk = pl->fpregisters->read(RT);
@@ -933,14 +875,12 @@ public:
 			pl->ROB->clear(rob_entry);
 			throw HardwareException("RSU");
 		}
-		cout << "SUCCESS" << endl;
 
 		//show registers where data is coming from
 		pl->fpregisters->setRecieve(rob_entry, RD);
 	}
 
 	void execute(){
-		cout << "EXECUTE" << endl;
 		//read operands"
 		unsigned * fromRS = pl->mult_RSU->getVV(RSU_entry);
 
@@ -951,7 +891,6 @@ public:
 
 	void write_result(){
 		//get result from execution unit
-		cout << "WRITE RESULT" << endl;
 		arith_result = pl->mult_file->checkout(rob_entry);
 		pl->mult_RSU->clear(RSU_entry);
 
@@ -965,8 +904,6 @@ public:
 
 		//send result to ROB
 		pl->ROB->update(rob_entry, arith_result);
-		cout << "SUCCESS" << endl;
-
 	}
 	
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new MULTS(bit_ins, pl); }
@@ -984,7 +921,6 @@ public:
 	
 	void issue(){
 
-		cout << "ISSUE" << endl;
 		//get operands
 		unsigned vj = pl->fpregisters->read(RS);
 		unsigned vk = pl->fpregisters->read(RT);
@@ -1006,7 +942,6 @@ public:
 	}
 
 	void execute(){
-		cout << "EXECUTE" << endl;
 		//read operands"
 		unsigned * fromRS = pl->mult_RSU->getVV(RSU_entry);
 

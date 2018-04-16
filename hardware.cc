@@ -308,7 +308,7 @@ void ReorderBuffer::print(){
 			
 
 		cout << setfill(' ') << setw(5) << entry_file[i]->entry << setw(6) << busy << setw(7) << ready;
-		cout << setw(12) << pc << setw(10) << stage << setw(5) << reg << dest << setw(12) << value << head << endl;
+		cout << setw(12) << pc << setw(10) << stage << setw(5) << reg << dest << setw(12) << value << endl;
 
 	}
 
@@ -591,7 +591,6 @@ void ReservationStationUnit::checkout(unsigned rob_entry, unsigned data, bool lo
 		if (station_file[i]->Qk == rob_entry) {
 			station_file[i]->Qk = UNDEFINED;
 			station_file[i]->Vk = data;
-			cout << "Locking RS for this cycle" << endl;
 			if(lock) setLock(1);
 		}
 	}

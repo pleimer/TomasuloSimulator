@@ -13,6 +13,8 @@
 using namespace std;
 
 #define IMM_MASK 0x0000FFFF
+#define IMM_TEST_EXTEND 0x00008000
+#define IMM_SIGN_EXTEND  0xFFFF0000
 #define R1_MASK 0x03E00000
 #define R2_MASK 0x001F0000
 #define R3_MASK 0x0000F800
@@ -193,6 +195,7 @@ public:
 		RD = R1(bit_inst);
 		RS = R2(bit_inst);
 		immediate = IMM_MASK & bit_inst;
+
 	}
 
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new LW(bit_ins, pl); }
@@ -490,20 +493,22 @@ class Branch : public Instruction {
 protected:
 	bool branch;
 	vector<unsigned> fpDestinations;
-	//vector<unsigned> intDestinations;
+	vector<unsigned> intDestinations;
 public:
 	Branch(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
 		RS = R1(bit_inst);
 		immediate = bit_inst & IMM_MASK;
+		if (immediate & IMM_TEST_EXTEND) immediate = immediate | IMM_SIGN_EXTEND;
 	}
 
 	void issue(){
 		cout << "ISSUE" << endl;
 		unsigned vj = pl->intregisters->read(RS);
+		unsigned qj = pl->intregisters->getDestination(RS);
 
 		//send info to ROB and RS
 		rob_entry = pl->ROB->push(pc_init, data_type, UNDEFINED);
-		try{ RSU_entry = pl->int_RSU->store(pc_init, vj, UNDEFINED, UNDEFINED, UNDEFINED, rob_entry, UNDEFINED); }
+		try{ RSU_entry = pl->int_RSU->store(pc_init, vj, UNDEFINED, qj, UNDEFINED, rob_entry, UNDEFINED); }
 		catch (exception &e) {
 			pl->ROB->clear(rob_entry);
 			throw HardwareException("RSU");
@@ -513,8 +518,8 @@ public:
 		//take snapshot, store all registers marked as destination for restore later
 		pl->fpregisters->takeSnapshot();
 		fpDestinations = pl->ROB->getDestByType(pc_init,F);
-		//pl->intregisters->takeSnapshot();
-		//intDestinations = pl->ROB->getDestByType(pc_init, R);
+		pl->intregisters->takeSnapshot();
+		intDestinations = pl->ROB->getDestByType(pc_init, R);
 
 		cout << "SUCCESS" << endl;
 
@@ -541,11 +546,12 @@ public:
 			pl->mult_RSU->clearAll();
 			pl->load_RSU->clearAll();
 
-			vector<unsigned> restore_data = pl->fpregisters->getRestoreData(fpDestinations);
-			pl->fpregisters->restore(fpDestinations, restore_data);
+			vector<unsigned> restore_data_f = pl->fpregisters->getRestoreData(fpDestinations);
+			vector<unsigned> restore_data_r = pl->fpregisters->getRestoreData(intDestinations);
+			pl->fpregisters->restore(fpDestinations, restore_data_f);
 			pl->fpregisters->clearRestoreBuffer();
-			/*pl->intregisters->restore(intDestinations, restore_data);
-			pl->intregisters->clearRestoreBuffer();*/
+			pl->intregisters->restore(intDestinations, restore_data_r);
+			pl->intregisters->clearRestoreBuffer();
 			throw BranchException();
 		}
 
@@ -564,7 +570,7 @@ public:
 	void write_result(){
 		cout << "WRITE RESULT" << endl;
 
-		int target_addr = pl->int_file->checkout(rob_entry);
+		unsigned target_addr = pl->int_file->checkout(rob_entry);
 
 		unsigned * fromRS = pl->int_RSU->getVV(RSU_entry); //get vj, vk
 
@@ -593,12 +599,13 @@ public:
 	void write_result(){
 		cout << "WRITE RESULT" << endl;
 
-		int target_addr = pl->int_file->checkout(rob_entry);
+		unsigned target_addr = pl->int_file->checkout(rob_entry);
 
 		unsigned * fromRS = pl->int_RSU->getVV(RSU_entry); //get vj, vk
+		//unsigned conReg = pl->intregisters->read(RS);
 
 		if (fromRS[0] != 0){//branch condition
-			pl->ROB->update(rob_entry, (unsigned)target_addr);
+			pl->ROB->update(rob_entry, target_addr);
 			branch = true;
 		}
 		else {
@@ -606,7 +613,7 @@ public:
 			pl->ROB->update(rob_entry, pc_init + 4);
 		}
 
-		pl->int_RSU->clear(RSU_entry);
+		//pl->int_RSU->clear(RSU_entry);
 	}
 	
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new BNEZ(bit_ins, pl); }

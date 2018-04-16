@@ -58,6 +58,8 @@ void Lock::alert(){
 
 bool Lock::isLocked(){
 	if (lock) throw HardwareException("Locked obj");
+	lock_time = 1; //to make sure clock cycle finishes out
+	lock = true;
 }
 
 void Lock::setLock(){
@@ -197,12 +199,23 @@ vector<unsigned> ReorderBuffer::getDestByType(unsigned pc_init,reg_t data_type){
 	vector<unsigned> destList;
 	unsigned aftrHead = head;
 
-	for (unsigned i = head; entry_file[i]->pc != pc_init; i++){
+	int i = head;
+	if (i >= entry_file.size()) i = 0;
+
+	while (entry_file[i]->pc != pc_init){
+		if (entry_file[i]->data_type == data_type){
+			destList.push_back(entry_file[i]->dest);
+		}
+		i++;
+		if (i >= entry_file.size()) i = 0;
+	}
+
+	/*for (i; entry_file[i]->pc != pc_init; i++){
+		if (i >= entry_file.size()) i = 0;
 		if (entry_file[i]->data_type = data_type){
 			destList.push_back(entry_file[i]->dest);
 		}
-		if (i >= entry_file.size()) i = 0;
-	}
+	}*/
 	return destList;
 }
 
@@ -348,10 +361,12 @@ void FPRegisterUnit::takeSnapshot(){
 void FPRegisterUnit::restore(vector<unsigned> replace, vector<unsigned> results){
 	int j = 0;
 	for (unsigned i = 0; i < register_file.size(); i++){
+		if (replace.size() == 0) return;
 		if (i != replace[j]){ //replace has reg numbers that we want to store results in
 			register_file[i] = restore_file[i];
 		}
 		else{
+			if (results.size() == 0) return;
 			register_file[i]->data = results[j];
 			register_file[i]->rob_dest = UNDEFINED;
 			j++;
@@ -660,7 +675,6 @@ void ExecUnitFile::assign(unsigned op1, unsigned op2, operation_t op_type, unsig
 	bool nonAvailable = true;
 	for (unsigned i = 0; i < exec_file.size(); i++){
 		try{
-			cout << "Dest of one pushing operands: " << dest << endl;
 			exec_file[i]->push_operands(op1,op2,op_type,dest);
 			nonAvailable = false;
 		}
@@ -693,10 +707,7 @@ void ExecUnitFile::alert(){
 	}
 }
 
-/*unsigned ExecUnitFile::Exec::operate(){
-	cout << "Instruction operation unavailable" << endl;
-	return 1;
-}*/
+
 
 IntegerFile::IntegerFile(unsigned num_units, unsigned latency): ExecUnitFile(num_units, latency){
 	for (unsigned i = 0; i < num_units; i++){
@@ -728,7 +739,7 @@ DividerFile::Divider::Divider(unsigned latency) : Exec(latency){}
 /*--------------------------------------------------------------------------------------------*/
 
 unsigned IntegerFile::Integer::operate(){
-		countLock();
+		isLocked();
 		int op1 = (int) this->op1;
 		int op2 = (int) this->op2;
 		switch (op_type){
@@ -744,7 +755,7 @@ unsigned IntegerFile::Integer::operate(){
 
 
 unsigned AdderFile::Adder::operate(){
-	countLock();
+	isLocked();
 	float op1 = unsigned2float(this->op1);
 	float op2 = unsigned2float(this->op2);
 	switch (op_type){
@@ -756,7 +767,7 @@ unsigned AdderFile::Adder::operate(){
 }
 
 unsigned MultiplierFile::Multiplier::operate(){
-	countLock();
+	isLocked();
 	float op1 = unsigned2float(this->op1);
 	float op2 = unsigned2float(this->op2);
 	return float2unsigned(op1 * op2);
@@ -764,7 +775,7 @@ unsigned MultiplierFile::Multiplier::operate(){
 
 
 unsigned DividerFile::Divider::operate(){
-	countLock();
+	isLocked();
 	float op1 = unsigned2float(this->op1);
 	float op2 = unsigned2float(this->op2);
 	return float2unsigned(op1 / op2);

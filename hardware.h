@@ -289,6 +289,8 @@ protected:
 		void push_operands(unsigned op1, unsigned op2, operation_t op_type, unsigned dest);
 		virtual unsigned operate() = 0;
 
+		void free();
+
 		unsigned dest; //rob destination to be broadcast on CDB, comes from reservation station
 	};
 

@@ -147,6 +147,7 @@ void Controller::execute(){
 			//is if issue successful:
 			inst_queue->pop();
 			issueSuccess = true;
+
 		}
 
 	}
@@ -156,7 +157,8 @@ void Controller::execute(){
 	}
 
 
-	for (unsigned i=0; i < running_inst.size(); i++){
+	for (int i = 0; i < running_inst.size(); i++){ //run in issue order
+
 		cout << "Instruction being assessed: ";
 		running_inst[i]->print();
 		running_inst[i]->assess();
@@ -164,7 +166,7 @@ void Controller::execute(){
 
 
 	if (issueSuccess){ //this is here because it must take place next clock cycle
-		setInInstStageOrder(running_inst);
+		//setInInstStageOrder(running_inst);
 		running_inst.push_back(instruction);
 		if (instruction != NULL)
 			instruction->setStage(EXECUTE);
@@ -182,8 +184,8 @@ unsigned char * Controller::inst_mem_base(){
 void Controller::setInInstStageOrder(vector<Instruction *> & running_inst){
 	Instruction * temp;
 	for (unsigned i = 0; i < running_inst.size(); i++){
-		for (unsigned j = i; j < running_inst.size(); j++){
-			if (running_inst[i]->getStage() > running_inst[j]->getStage()){
+		for (unsigned j = i; j > running_inst.size(); j++){
+			if (running_inst[i]->getStage() < running_inst[j]->getStage()){
 				temp = running_inst[i];
 				running_inst[i] = running_inst[j];
 				running_inst[j] = temp;

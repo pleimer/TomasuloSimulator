@@ -109,6 +109,7 @@ void ProgramCounter::print(){
 unsigned AddressUnit::calc_EMA(int imm, int reg_val){
 	isLocked();
 	setLock();
+	if (reg_val == UNDEFINED) throw DataException();
 	return imm + reg_val;
 }
 
@@ -659,6 +660,7 @@ void ExecUnitFile::assign(unsigned op1, unsigned op2, operation_t op_type, unsig
 	bool nonAvailable = true;
 	for (unsigned i = 0; i < exec_file.size(); i++){
 		try{
+			cout << "Dest of one pushing operands: " << dest << endl;
 			exec_file[i]->push_operands(op1,op2,op_type,dest);
 			nonAvailable = false;
 		}
@@ -680,7 +682,7 @@ void ExecUnitFile::Exec::push_operands(unsigned op1, unsigned op2, operation_t o
 unsigned ExecUnitFile::checkout(unsigned rob_dest){
 	unsigned result = UNDEFINED;
 	for (unsigned i = 0; i < exec_file.size(); i++){
-		if (exec_file[i]->dest == rob_dest) result = exec_file[i]->operate();
+		if (exec_file[i]->dest == rob_dest) result = exec_file[i]->operate(); //INEQUALITY NOT WORKING - exec_file[i]->dest is wrong
 	}
 	return result;
 }

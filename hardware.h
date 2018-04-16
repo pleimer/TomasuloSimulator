@@ -16,7 +16,7 @@ typedef enum { INTEGER_RS, ADD_RS, MULT_RS, LOAD_B } res_station_t;
 
 typedef enum { INTEGER, ADDER, MULTIPLIER, DIVIDER, MEMORY } exe_unit_t;
 
-typedef enum{ COMMIT, EXECUTE, ISSUE, WRITE_RESULT } stage_t;
+typedef enum{ COMMIT, ISSUE, EXECUTE, WRITE_RESULT } stage_t;
 
 typedef enum{ R, F } reg_t;
 

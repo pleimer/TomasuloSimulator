@@ -156,23 +156,16 @@ void Controller::execute(){
 	}
 
 
-
 	for (unsigned i=0; i < running_inst.size(); i++){
-		try{
-			cout << "Instruction being assessed: ";
-			running_inst[i]->print();
-			running_inst[i]->assess();
-		}
-		catch (InstructionEmpty& ie){
-			cout << "deleted" << endl;
-			running_inst.erase(running_inst.begin() + i);
-			i--;
-		}
+		cout << "Instruction being assessed: ";
+		running_inst[i]->print();
+		running_inst[i]->assess();
 	}
 
+
 	if (issueSuccess){ //this is here because it must take place next clock cycle
-		running_inst.push_back(instruction);
 		setInInstStageOrder(running_inst);
+		running_inst.push_back(instruction);
 		if (instruction != NULL)
 			instruction->setStage(EXECUTE);
 	}

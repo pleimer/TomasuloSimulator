@@ -137,6 +137,9 @@ void Instruction::write_result(){
 
 void Instruction::commit(){
 	cout << "COMMIT" << endl;
+
+	//free all hardware units here
+	pl->adr_unit.free();
 	
 	//in case commit didnt work last time, still must checkout RSs
 	pl->ROB->update(rob_entry, arith_result);
@@ -291,6 +294,7 @@ public:
 		//get result from execution unit
 		arith_result = pl->int_file->checkout(rob_entry);
 		pl->int_RSU->clear(RSU_entry);
+		cout << "Result: " << hex << arith_result << endl;
 
 		//checkout result value at RS that may be wating for it
 		pl->ROB->update(rob_entry, arith_result);
@@ -482,12 +486,13 @@ public:
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new DIV(bit_ins, pl); }
 };
 
-class BEQZ : public Instruction {
+class Branch : public Instruction {
+protected:
 	bool branch;
 	vector<unsigned> fpDestinations;
+	//vector<unsigned> intDestinations;
 public:
-	BEQZ(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
-		type = "BEQZ";
+	Branch(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
 		RS = R1(bit_inst);
 		immediate = bit_inst & IMM_MASK;
 	}
@@ -508,6 +513,8 @@ public:
 		//take snapshot, store all registers marked as destination for restore later
 		pl->fpregisters->takeSnapshot();
 		fpDestinations = pl->ROB->getDestByType(pc_init,F);
+		//pl->intregisters->takeSnapshot();
+		//intDestinations = pl->ROB->getDestByType(pc_init, R);
 
 		cout << "SUCCESS" << endl;
 
@@ -517,27 +524,10 @@ public:
 		unsigned * fromRS = pl->int_RSU->getVV(RSU_entry);
 
 		//send to execution unit (excpetion thrown if data undefined)
-		pl->int_file->assign(pc_init, 4* immediate, AD, rob_entry);  //four bytes per instruction
+		pl->int_file->assign(pc_init, 4 * immediate, AD, rob_entry);  //four bytes per instruction
 	}
 
-	void write_result(){
-		cout << "WRITE RESULT" << endl;
 
-		int target_addr = pl->int_file->checkout(rob_entry);
-
-		unsigned * fromRS = pl->int_RSU->getVV(RSU_entry); //get vj, vk
-		
-		if (fromRS[0] == 0){//branch condition
-			pl->ROB->update(rob_entry, (unsigned) target_addr);	
-			branch = true;
-		}
-		else {
-			branch = false;
-			pl->ROB->update(rob_entry, pc_init + 4);
-		}
-
-		pl->int_RSU->clear(RSU_entry);
-	}
 
 	void commit(){
 		cout << "COMMIT" << endl;
@@ -554,21 +544,69 @@ public:
 			vector<unsigned> restore_data = pl->fpregisters->getRestoreData(fpDestinations);
 			pl->fpregisters->restore(fpDestinations, restore_data);
 			pl->fpregisters->clearRestoreBuffer();
+			/*pl->intregisters->restore(intDestinations, restore_data);
+			pl->intregisters->clearRestoreBuffer();*/
 			throw BranchException();
 		}
 
 
 	}
 	
+	
+};
+
+class BEQZ : public Branch {
+public:
+	BEQZ(int bit_ins, Pipeline * pl) : Branch(bit_ins, pl){
+		type = "BEQZ";
+	}
+
+	void write_result(){
+		cout << "WRITE RESULT" << endl;
+
+		int target_addr = pl->int_file->checkout(rob_entry);
+
+		unsigned * fromRS = pl->int_RSU->getVV(RSU_entry); //get vj, vk
+
+		if (fromRS[0] == 0){//branch condition
+			pl->ROB->update(rob_entry, (unsigned)target_addr);
+			branch = true;
+		}
+		else {
+			branch = false;
+			pl->ROB->update(rob_entry, pc_init + 4);
+		}
+
+		pl->int_RSU->clear(RSU_entry);
+	}
+
+
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new BEQZ(bit_ins, pl); }
 };
 
-class BNEZ : public Instruction {
+class BNEZ : public Branch {
 public:
-	BNEZ(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
+	BNEZ(int bit_inst, Pipeline * pl) : Branch(bit_inst, pl){
 		type = "BNEZ";
-		RS = R1(bit_inst);
-		immediate = bit_inst & IMM_MASK;
+	}
+
+	void write_result(){
+		cout << "WRITE RESULT" << endl;
+
+		int target_addr = pl->int_file->checkout(rob_entry);
+
+		unsigned * fromRS = pl->int_RSU->getVV(RSU_entry); //get vj, vk
+
+		if (fromRS[0] != 0){//branch condition
+			pl->ROB->update(rob_entry, (unsigned)target_addr);
+			branch = true;
+		}
+		else {
+			branch = false;
+			pl->ROB->update(rob_entry, pc_init + 4);
+		}
+
+		pl->int_RSU->clear(RSU_entry);
 	}
 	
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new BNEZ(bit_ins, pl); }
@@ -671,8 +709,12 @@ public:
 
 	void issue(){ //exceptions are thrown by hardware
 		cout << "ISSUE" << endl;
+
+		unsigned vj = pl->intregisters->read(RS);
+		unsigned qj = pl->intregisters->getDestination(RS);
+
 		rob_entry = pl->ROB->push(pc_init, data_type, RD);
-		try{ RSU_entry = pl->load_RSU->store(pc_init, immediate, UNDEFINED, UNDEFINED, UNDEFINED, rob_entry, immediate); }
+		try{ RSU_entry = pl->load_RSU->store(pc_init, vj, UNDEFINED, qj, UNDEFINED, rob_entry, immediate); }
 		catch (exception &e) {
 			pl->ROB->clear(rob_entry);
 			throw HardwareException("RSU");
@@ -691,6 +733,8 @@ public:
 		int rVal = pl->intregisters->read(RS);
 		EMA = pl->adr_unit.calc_EMA(immediate, rVal);
 
+		cout << "EMA is: " << hex << EMA << endl;
+
 		pl->load_RSU->update(EMA, RSU_entry);
 		cout << "SUCCESS" << endl;
 	}
@@ -706,10 +750,6 @@ public:
 		pl->load_RSU->checkout(rob_entry, arith_result);
 		pl->adder_RSU->checkout(rob_entry, arith_result);
 		pl->mult_RSU->checkout(rob_entry, arith_result);
-
-
-		//free all hardware units here
-		pl->adr_unit.free();
 		
 		cout << "SUCCESS" << endl;
 	}

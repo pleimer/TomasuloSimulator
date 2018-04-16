@@ -58,11 +58,14 @@ void Lock::alert(){
 
 bool Lock::isLocked(){
 	if (lock) throw HardwareException("Locked obj");
-	lock_time = 1; //to make sure clock cycle finishes out
-	lock = true;
 }
 
 void Lock::setLock(){
+	lock = true;
+}
+
+void Lock::setLock(unsigned cycles){
+	lock_time = cycles;
 	lock = true;
 }
 
@@ -359,18 +362,17 @@ void FPRegisterUnit::takeSnapshot(){
 }
 
 void FPRegisterUnit::restore(vector<unsigned> replace, vector<unsigned> results){
-	int j = 0;
 	for (unsigned i = 0; i < register_file.size(); i++){
-		if (replace.size() == 0) return;
-		if (i != replace[j]){ //replace has reg numbers that we want to store results in
-			register_file[i] = restore_file[i];
+		register_file[i] = restore_file[i];
+	}
+	for (unsigned i = 0; i < register_file.size(); i++){
+		for (int j = 0; j < replace.size(); j++){
+			if (i == replace[j]){
+				if (results.size() == 0) return;
+				register_file[i]->data = results[j];
+				register_file[i]->rob_dest = UNDEFINED;
+			}
 		}
-		else{
-			if (results.size() == 0) return;
-			register_file[i]->data = results[j];
-			register_file[i]->rob_dest = UNDEFINED;
-			j++;
-		}	
 	}
 }
 
@@ -571,21 +573,26 @@ void ReservationStationUnit::update(unsigned address, unsigned entry){
 }
 
 unsigned * ReservationStationUnit::getVV(unsigned entry){
+	isLocked();
 	if (entry == UNDEFINED) throw HardwareException("RS: no entry exists.");
 	vv[0] = station_file[entry]->Vj;
 	vv[1] = station_file[entry]->Vk;
 	return vv;
 }
 
-void ReservationStationUnit::checkout(unsigned rob_entry, unsigned data){
+void ReservationStationUnit::checkout(unsigned rob_entry, unsigned data, bool lock){ //upon checkout success,, locks reading for current cycle
 	for (unsigned i = 0; i < station_file.size(); i++){
 		if (station_file[i]->Qj == rob_entry) {
 			station_file[i]->Qj = UNDEFINED;
 			station_file[i]->Vj = data;
+
+			if(lock) setLock(1);
 		}
 		if (station_file[i]->Qk == rob_entry) {
 			station_file[i]->Qk = UNDEFINED;
 			station_file[i]->Vk = data;
+			cout << "Locking RS for this cycle" << endl;
+			if(lock) setLock(1);
 		}
 	}
 }
@@ -740,6 +747,7 @@ DividerFile::Divider::Divider(unsigned latency) : Exec(latency){}
 
 unsigned IntegerFile::Integer::operate(){
 		isLocked();
+		setLock(1);
 		int op1 = (int) this->op1;
 		int op2 = (int) this->op2;
 		switch (op_type){
@@ -756,6 +764,7 @@ unsigned IntegerFile::Integer::operate(){
 
 unsigned AdderFile::Adder::operate(){
 	isLocked();
+	setLock(1);
 	float op1 = unsigned2float(this->op1);
 	float op2 = unsigned2float(this->op2);
 	switch (op_type){
@@ -768,6 +777,7 @@ unsigned AdderFile::Adder::operate(){
 
 unsigned MultiplierFile::Multiplier::operate(){
 	isLocked();
+	setLock(1);
 	float op1 = unsigned2float(this->op1);
 	float op2 = unsigned2float(this->op2);
 	return float2unsigned(op1 * op2);
@@ -776,6 +786,7 @@ unsigned MultiplierFile::Multiplier::operate(){
 
 unsigned DividerFile::Divider::operate(){
 	isLocked();
+	setLock(1);
 	float op1 = unsigned2float(this->op1);
 	float op2 = unsigned2float(this->op2);
 	return float2unsigned(op1 / op2);

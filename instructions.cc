@@ -145,10 +145,10 @@ void Instruction::commit(){
 	
 	//in case commit didnt work last time, still must checkout RSs
 	pl->ROB->update(rob_entry, arith_result);
-	pl->int_RSU->checkout(rob_entry, arith_result);
-	pl->load_RSU->checkout(rob_entry, arith_result);
-	pl->adder_RSU->checkout(rob_entry, arith_result);
-	pl->mult_RSU->checkout(rob_entry, arith_result);
+	pl->int_RSU->checkout(rob_entry, arith_result, false);
+	pl->load_RSU->checkout(rob_entry, arith_result, false);
+	pl->adder_RSU->checkout(rob_entry, arith_result, false);
+	pl->mult_RSU->checkout(rob_entry, arith_result, false);
 
 	//registers get data from ROB and ROB pops instruction out for all instructions
 	reg_t data_type = pl->ROB->getDataType();
@@ -255,10 +255,10 @@ public:
 
 		//checkout result value at RS that may be wating for it
 		pl->ROB->update(rob_entry, arith_result);
-		pl->int_RSU->checkout(rob_entry, arith_result);
-		pl->load_RSU->checkout(rob_entry, arith_result);
-		pl->adder_RSU->checkout(rob_entry, arith_result);
-		pl->mult_RSU->checkout(rob_entry, arith_result);
+		pl->int_RSU->checkout(rob_entry, arith_result, true);
+		pl->load_RSU->checkout(rob_entry, arith_result, true);
+		pl->adder_RSU->checkout(rob_entry, arith_result, true);
+		pl->mult_RSU->checkout(rob_entry, arith_result, true);
 
 	}
 };
@@ -301,10 +301,10 @@ public:
 
 		//checkout result value at RS that may be wating for it
 		pl->ROB->update(rob_entry, arith_result);
-		pl->int_RSU->checkout(rob_entry, arith_result);
-		pl->load_RSU->checkout(rob_entry, arith_result);
-		pl->adder_RSU->checkout(rob_entry, arith_result);
-		pl->mult_RSU->checkout(rob_entry, arith_result);
+		pl->int_RSU->checkout(rob_entry, arith_result, true);
+		pl->load_RSU->checkout(rob_entry, arith_result, true);
+		pl->adder_RSU->checkout(rob_entry, arith_result, true);
+		pl->mult_RSU->checkout(rob_entry, arith_result, true);
 
 	}
 };
@@ -547,7 +547,7 @@ public:
 			pl->load_RSU->clearAll();
 
 			vector<unsigned> restore_data_f = pl->fpregisters->getRestoreData(fpDestinations);
-			vector<unsigned> restore_data_r = pl->fpregisters->getRestoreData(intDestinations);
+			vector<unsigned> restore_data_r = pl->intregisters->getRestoreData(intDestinations);
 			pl->fpregisters->restore(fpDestinations, restore_data_f);
 			pl->fpregisters->clearRestoreBuffer();
 			pl->intregisters->restore(intDestinations, restore_data_r);
@@ -613,7 +613,7 @@ public:
 			pl->ROB->update(rob_entry, pc_init + 4);
 		}
 
-		//pl->int_RSU->clear(RSU_entry);
+		pl->int_RSU->clear(RSU_entry);
 	}
 	
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new BNEZ(bit_ins, pl); }
@@ -753,10 +753,10 @@ public:
 
 		arith_result = pl->memory_unit->readInt(EMA);
 		pl->ROB->update(rob_entry, arith_result);
-		pl->int_RSU->checkout(rob_entry, arith_result);
-		pl->load_RSU->checkout(rob_entry, arith_result);
-		pl->adder_RSU->checkout(rob_entry, arith_result);
-		pl->mult_RSU->checkout(rob_entry, arith_result);
+		pl->int_RSU->checkout(rob_entry, arith_result, true);
+		pl->load_RSU->checkout(rob_entry, arith_result, true);
+		pl->adder_RSU->checkout(rob_entry, arith_result, true);
+		pl->mult_RSU->checkout(rob_entry, arith_result, true);
 		
 		cout << "SUCCESS" << endl;
 	}
@@ -828,10 +828,10 @@ public:
 
 		//checkout result value at RS that may be wating for it
 		pl->ROB->update(rob_entry, arith_result);
-		pl->int_RSU->checkout(rob_entry, arith_result);
-		pl->load_RSU->checkout(rob_entry, arith_result);
-		pl->adder_RSU->checkout(rob_entry, arith_result);
-		pl->mult_RSU->checkout(rob_entry, arith_result);
+		pl->int_RSU->checkout(rob_entry, arith_result, true);
+		pl->load_RSU->checkout(rob_entry, arith_result, true);
+		pl->adder_RSU->checkout(rob_entry, arith_result, true);
+		pl->mult_RSU->checkout(rob_entry, arith_result, true);
 
 		//send result to ROB
 		pl->ROB->update(rob_entry, arith_result);
@@ -892,10 +892,10 @@ public:
 
 		//checkout result value at RS that may be wating for it
 		pl->ROB->update(rob_entry, arith_result);
-		pl->int_RSU->checkout(rob_entry, arith_result);
-		pl->load_RSU->checkout(rob_entry, arith_result);
-		pl->adder_RSU->checkout(rob_entry, arith_result);
-		pl->mult_RSU->checkout(rob_entry, arith_result);
+		pl->int_RSU->checkout(rob_entry, arith_result, true);
+		pl->load_RSU->checkout(rob_entry, arith_result, true);
+		pl->adder_RSU->checkout(rob_entry, arith_result, true);
+		pl->mult_RSU->checkout(rob_entry, arith_result, true);
 
 		//send result to ROB
 		pl->ROB->update(rob_entry, arith_result);
@@ -958,10 +958,10 @@ public:
 
 		//checkout result value at RS that may be wating for it
 		pl->ROB->update(rob_entry, arith_result);
-		pl->int_RSU->checkout(rob_entry, arith_result);
-		pl->load_RSU->checkout(rob_entry, arith_result);
-		pl->adder_RSU->checkout(rob_entry, arith_result);
-		pl->mult_RSU->checkout(rob_entry, arith_result);
+		pl->int_RSU->checkout(rob_entry, arith_result, true);
+		pl->load_RSU->checkout(rob_entry, arith_result, true);
+		pl->adder_RSU->checkout(rob_entry, arith_result, true);
+		pl->mult_RSU->checkout(rob_entry, arith_result, true);
 
 		//send result to ROB
 		pl->ROB->update(rob_entry, arith_result);
@@ -1023,10 +1023,10 @@ public:
 
 		//checkout result value at RS that may be wating for it
 		pl->ROB->update(rob_entry, arith_result);
-		pl->int_RSU->checkout(rob_entry, arith_result);
-		pl->load_RSU->checkout(rob_entry, arith_result);
-		pl->adder_RSU->checkout(rob_entry, arith_result);
-		pl->mult_RSU->checkout(rob_entry, arith_result);
+		pl->int_RSU->checkout(rob_entry, arith_result, true);
+		pl->load_RSU->checkout(rob_entry, arith_result, true);
+		pl->adder_RSU->checkout(rob_entry, arith_result, true);
+		pl->mult_RSU->checkout(rob_entry, arith_result, true);
 
 		//send result to ROB
 		pl->ROB->update(rob_entry, arith_result);

@@ -78,8 +78,9 @@ bool InstructionQueue::isFull(){
 }
 
 
-Controller::Controller(unsigned inst_queue_size, Pipeline * pl) {
+Controller::Controller(unsigned inst_queue_size, Pipeline * pl, unsigned max_issue) {
 	this->pl = pl;
+	this->max_issue = max_issue;
 	inst_executed = 0;
 	inst_memory = new InstructionMemory((unsigned)256);
 	inst_queue = new InstructionQueue(inst_queue_size);//same size as ROB
@@ -107,8 +108,6 @@ void Controller::execute(){
 		cerr << he.what();
 	}
 	
-	
-
 	
 	//put on running_inst stack, then run through that stack and assess() every instruction in it
 	//if issue() fails, do not pop another instruction
@@ -142,12 +141,12 @@ void Controller::execute(){
 
 	try{
 		if (instruction != NULL){
-			instruction->issue(); 
 
+			instruction->issue();
 			//is if issue successful:
 			inst_queue->pop();
 			issueSuccess = true;
-
+			
 		}
 
 	}

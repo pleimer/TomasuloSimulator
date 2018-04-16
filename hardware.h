@@ -69,6 +69,7 @@ private:
 public:
 	Lock();
 	void alert();
+	void setLock(unsigned cycles);
 	bool isLocked();
 	void free();
 	bool countLock();
@@ -230,7 +231,7 @@ public:
 //multiplier and divider - both int and floating point
 //memory_unit - both float and int data
 
-class ReservationStationUnit{
+class ReservationStationUnit: public Lock{
 
 	unsigned num_stations; //enforced maximum number of stations
 	unsigned vv[2];
@@ -258,7 +259,7 @@ public:
 	void clearAll();
 
 	unsigned * getVV(unsigned entry); //get vj and vk at rsu_entry
-	void checkout(unsigned rob_entry, unsigned data); //is ROB entry in here, if so replaces inserts data
+	void checkout(unsigned rob_entry, unsigned data, bool lock); //is ROB entry in here, if so replaces inserts data
 	
 	//used by issue to store values, dest, references, and addresses - come from reg file
 	//throws exception if no entries are left

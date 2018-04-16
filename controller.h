@@ -40,10 +40,11 @@ class Controller {
 	std::vector<Instruction *>  running_inst;
 
 	unsigned inst_executed;
+	unsigned max_issue;
 
 public:
 	InstructionMemory * inst_memory;
-	Controller(unsigned inst_queue_size, Pipeline * pl);
+	Controller(unsigned inst_queue_size, Pipeline * pl, unsigned max_issue);
 	void execute();
 	unsigned char * inst_mem_base();
 	void setInInstStageOrder(std::vector<Instruction *> &);//sets vector of instructions in instruction stage order

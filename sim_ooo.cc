@@ -73,7 +73,7 @@ sim_ooo::sim_ooo(unsigned mem_size,
 							num_load_res_stations,
 							max_issue);
 
-	controller = new Controller(rob_size, pipeline);
+	controller = new Controller(rob_size, pipeline, max_issue);
 }
 	
 sim_ooo::~sim_ooo(){

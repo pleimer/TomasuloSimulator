@@ -154,13 +154,16 @@ void Instruction::commit(){
 	switch (data_type){
 	case R:
 		pl->intregisters->checkout(reg_items[0], rob_entry);
+		pl->intregisters->pushRestoreBuffer(RD, reg_items[0]); //the value
 		break;
 	case F:
 		pl->fpregisters->checkout(reg_items[0], rob_entry); //value, reg with that rob_entry
+		pl->fpregisters->pushRestoreBuffer(RD, reg_items[0]); //the value
 		break;
 	}
 
-	pl->fpregisters->pushRestoreBuffer(RD,reg_items[0]); //the value
+	
+
 
 	cout << "SUCCESS" << endl;
 	return;
@@ -205,66 +208,178 @@ public:
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new SW(bit_ins, pl); }
 };
 
-class ADD : public Instruction {
+
+class ExecInt : public Instruction{
 public:
-	ADD(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
-		type = "ADD";
+	ExecInt(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
 		data_type = R;
 		RD = R1(bit_inst);
 		RS = R2(bit_inst);
 		RT = R3(bit_inst);
 	}
-	
-	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new ADD(bit_ins, pl); }
+
+	void issue(){
+
+		cout << "ISSUE" << endl;
+		//get operands
+		unsigned vj = pl->intregisters->read(RS);
+		unsigned vk = pl->intregisters->read(RT);
+		unsigned qj = pl->intregisters->getDestination(RS);
+		unsigned qk = pl->intregisters->getDestination(RT);
+
+		//send info to ROB and RS
+		rob_entry = pl->ROB->push(pc_init, data_type, RD);
+		try{ RSU_entry = pl->int_RSU->store(pc_init, vj, vk, qj, qk, rob_entry, immediate); }
+		catch (exception &e) {
+			pl->ROB->clear(rob_entry);
+			throw HardwareException("RSU");
+		}
+		cout << "SUCCESS" << endl;
+
+		//show registers where data is coming from
+		pl->intregisters->setRecieve(rob_entry, RD);
+	}
+
+	void write_result(){
+		cout << "WRITE RESULT" << endl;
+		//get result from execution unit
+		arith_result = pl->int_file->checkout(rob_entry);
+		pl->int_RSU->clear(RSU_entry);
+
+
+		//checkout result value at RS that may be wating for it
+		pl->ROB->update(rob_entry, arith_result);
+		pl->int_RSU->checkout(rob_entry, arith_result);
+		pl->load_RSU->checkout(rob_entry, arith_result);
+		pl->adder_RSU->checkout(rob_entry, arith_result);
+		pl->mult_RSU->checkout(rob_entry, arith_result);
+
+	}
 };
 
-class ADDI : public Instruction {
+class ExecIntImm : public Instruction{
 public:
-	ADDI(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
-		type = "ADDI";
+	ExecIntImm(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
 		data_type = R;
 		RD = R1(bit_inst);
 		RS = R2(bit_inst);
 		immediate = IMM_MASK & bit_inst;
+	}
+
+	void issue(){
+
+		cout << "ISSUE" << endl;
+		//get operands
+		unsigned vj = pl->intregisters->read(RS);
+		unsigned qj = pl->intregisters->getDestination(RS);
+
+		rob_entry = pl->ROB->push(pc_init, data_type, RD);
+		try{ RSU_entry = pl->int_RSU->store(pc_init, vj, UNDEFINED, qj, UNDEFINED, rob_entry, UNDEFINED); }
+		catch (exception &e) {
+			pl->ROB->clear(rob_entry);
+			throw HardwareException("RSU");
+		}
+		//send to reservation stations too
+		//inst_address, Vj, Vk, Qj, Qk, dest, address, 
+		//and tell registers where data is coming from
+		pl->intregisters->setRecieve(rob_entry, RD);
+		cout << "SUCCESS" << endl;
+	}
+
+	void write_result(){
+		cout << "WRITE RESULT" << endl;
+		//get result from execution unit
+		arith_result = pl->int_file->checkout(rob_entry);
+		pl->int_RSU->clear(RSU_entry);
+
+		//checkout result value at RS that may be wating for it
+		pl->ROB->update(rob_entry, arith_result);
+		pl->int_RSU->checkout(rob_entry, arith_result);
+		pl->load_RSU->checkout(rob_entry, arith_result);
+		pl->adder_RSU->checkout(rob_entry, arith_result);
+		pl->mult_RSU->checkout(rob_entry, arith_result);
+
+	}
+};
+
+class ADD : public ExecInt {
+public:
+	ADD(int bit_inst, Pipeline * pl) : ExecInt(bit_inst, pl){
+		type = "ADD";
+	}
+	void execute(){
+		cout << "EXECUTE" << endl;
+		//read operands
+		unsigned * fromRS = pl->int_RSU->getVV(RSU_entry);
+
+		//send to execution unit (excpetion thrown if data undefined)
+		pl->int_file->assign(fromRS[0], fromRS[1], AD, rob_entry);
+	}
+
+	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new ADD(bit_ins, pl); }
+};
+
+class ADDI : public ExecIntImm {
+public:
+	ADDI(int bit_inst, Pipeline * pl) : ExecIntImm(bit_inst, pl){
+		type = "ADDI";
+	}
+
+	void execute(){
+		cout << "Execute: " << hex << pc_init << endl;
+		unsigned * fromRS = pl->int_RSU->getVV(RSU_entry);
+		pl->int_file->assign(fromRS[0], immediate, AD, rob_entry);
+		cout << "Success" << endl;
 	}
 	
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new ADDI(bit_ins, pl); }
 };
 
-class SUB : public Instruction {
+class SUB : public ExecInt {
 public:
-	SUB(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
+	SUB(int bit_inst, Pipeline * pl) : ExecInt(bit_inst, pl){
 		type = "SUB";
-		data_type = R;
-		RD = R1(bit_inst);
-		RS = R2(bit_inst);
-		RT = R3(bit_inst);
+	}
+
+	void execute(){
+		cout << "EXECUTE" << endl;
+		unsigned * fromRS = pl->int_RSU->getVV(RSU_entry);
+
+		pl->int_file->assign(fromRS[0], fromRS[1], S, rob_entry);
 	}
 	
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new SUB(bit_ins, pl); }
 };
 
-class SUBI : public Instruction {
+class SUBI : public ExecIntImm {
 public:
-	SUBI(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
+	SUBI(int bit_inst, Pipeline * pl) : ExecIntImm(bit_inst, pl){
 		type = "SUBI";
-		data_type = R;
-		RD = R1(bit_inst);
-		RS = R2(bit_inst);
-		immediate = IMM_MASK & bit_inst;
+	}
+
+	void execute(){
+		unsigned * fromRS = pl->int_RSU->getVV(RSU_entry);
+
+		pl->int_file->assign(fromRS[0], immediate, S, rob_entry);
 	}
 	
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new SUBI(bit_ins, pl); }
 };
 
-class XOR : public Instruction {
+class XOR : public ExecInt {
 public:
-	XOR(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
+	XOR(int bit_inst, Pipeline * pl) : ExecInt(bit_inst, pl){
 		type = "XOR";
-		data_type = R;
-		RD = R1(bit_inst);
-		RS = R2(bit_inst);
-		RT = R3(bit_inst);
+	}
+
+	void execute(){
+		cout << "EXECUTE" << endl;
+		unsigned * fromRS = pl->int_RSU->getVV(RSU_entry);
+
+		if (fromRS[0] == UNDEFINED) fromRS[0] = 1; //gotta cheat here
+		if (fromRS[1] == UNDEFINED) fromRS[1] = 1;
+
+		pl->int_file->assign(fromRS[0], fromRS[1], X, rob_entry);
 	}
 	
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new XOR(bit_ins, pl); }
@@ -283,14 +398,17 @@ public:
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new XORI(bit_ins, pl); }
 };
 
-class OR : public Instruction {
+class OR : public ExecInt {
 public:
-	OR(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
+	OR(int bit_inst, Pipeline * pl) : ExecInt(bit_inst, pl){
 		type = "OR";
-		data_type = R;
-		RD = R1(bit_inst);
-		RS = R2(bit_inst);
-		RT = R3(bit_inst);
+	}
+
+	void execute(){
+		cout << "EXECUTE" << endl;
+		unsigned * fromRS = pl->int_RSU->getVV(RSU_entry);
+
+		pl->int_file->assign(fromRS[0], fromRS[1], O, rob_entry);
 	}
 	
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new OR(bit_ins, pl); }
@@ -309,14 +427,17 @@ public:
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new ORI(bit_ins, pl); }
 };
 
-class AND : public Instruction {
+class AND : public ExecInt {
 public:
-	AND(int bit_inst, Pipeline * pl) : Instruction(bit_inst, pl){
+	AND(int bit_inst, Pipeline * pl) : ExecInt(bit_inst, pl){
 		type = "AND";
-		data_type = R;
-		RD = R1(bit_inst);
-		RS = R2(bit_inst);
-		RT = R3(bit_inst);
+	}
+
+	void execute(){
+		cout << "EXECUTE" << endl;
+		unsigned * fromRS = pl->int_RSU->getVV(RSU_entry);
+
+		pl->int_file->assign(fromRS[0], fromRS[1], AN, rob_entry);
 	}
 	
 	static Instruction *  Create(int bit_ins, Pipeline * pl) { return new AND(bit_ins, pl); }

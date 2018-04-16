@@ -133,6 +133,7 @@ void Controller::execute(){
 		catch (BranchException &be){
 			running_inst.clear();
 			inst_queue->clear();
+			inst_executed++;
 			return;
 		}
 	}
@@ -141,7 +142,7 @@ void Controller::execute(){
 
 	try{
 		if (instruction != NULL){
-			instruction->issue(); //THIS IS THE PROBLEMATIC LINE
+			instruction->issue(); 
 
 			//is if issue successful:
 			inst_queue->pop();

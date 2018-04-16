@@ -5,6 +5,7 @@
 #include <string.h>
 #include <exception>
 #include <vector>
+#include <map>
 #include <queue>
 
 typedef enum { LW, SW, ADD, ADDI, SUB, SUBI, XOR, XORI, OR, ORI, AND, ANDI, MULT, DIV, BEQZ, BNEZ, BLTZ, BGTZ, BLEZ, BGEZ, JUMP, EOP, LWS, SWS, ADDS, SUBS, MULTS, DIVS } opcode_t;
@@ -15,7 +16,7 @@ typedef enum { INTEGER_RS, ADD_RS, MULT_RS, LOAD_B } res_station_t;
 
 typedef enum { INTEGER, ADDER, MULTIPLIER, DIVIDER, MEMORY } exe_unit_t;
 
-typedef enum{ COMMIT, ISSUE, EXECUTE, WRITE_RESULT } stage_t;
+typedef enum{ COMMIT, EXECUTE, ISSUE, WRITE_RESULT } stage_t;
 
 typedef enum{ R, F } reg_t;
 
@@ -23,6 +24,13 @@ typedef enum{ R, F } reg_t;
 #define NUM_GP_REGISTERS 32
 #define NUM_OPCODES 28
 #define NUM_STAGES 4
+
+
+//for printing pending instructions
+struct ROB_info{
+	unsigned pc;
+	stage_t stage;
+};
 
 class HardwareException : public std::exception{
 	std::string m_msg;
@@ -118,6 +126,8 @@ public:
 	reg_t getDataType();
 	std::vector<unsigned> getDestByType(unsigned pc_init,reg_t data_type); //gets all destinations by type between pc_init and head
 	std::vector<unsigned> fetch(unsigned rob_entry);
+	
+	std::vector<ROB_info*> readInfo();
 	void print();
 
 private:
@@ -183,10 +193,18 @@ public:
 	void write(int data, unsigned address);
 	void checkout(unsigned data, unsigned address);
 
+	void takeSnapshot();
+	void restore(std::vector<unsigned> replace, std::vector<unsigned> results);
+
 	void clear(unsigned address);
 	unsigned getDestination(unsigned address);
 
 	void reset();
+
+	//for restoring previous states
+	void pushRestoreBuffer(unsigned regNum, unsigned data);
+	std::vector<unsigned> getRestoreData(std::vector<unsigned> regs); //returns most recent data for each result destined by entries in regs in regs order
+	void clearRestoreBuffer();
 
 private:
 	std::vector<IntRegister*> register_file;

@@ -7,7 +7,6 @@ class Pipeline{
 		void posedge(Pipeline& pipeline);
 	};
 
-	unsigned num_cycles;
 
 
 public:
@@ -17,7 +16,7 @@ public:
 	AddressUnit adr_unit;
 	ReorderBuffer * ROB; //allocates mem
 	FPRegisterUnit * fpregisters; //allocates mem
-	IntRegisterUnit * intregisters;
+	FPRegisterUnit * intregisters;
 
 	ReservationStationUnit * int_RSU; //allocates mem
 	ReservationStationUnit * adder_RSU; //allocates mem
@@ -44,7 +43,6 @@ public:
 
 	void cycle();
 
-	unsigned getCycles();
 	
 
 	

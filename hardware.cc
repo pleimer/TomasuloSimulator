@@ -226,6 +226,17 @@ void ReorderBuffer::pushHead(){
 	if (head >= rob_size) head = 0;
 }
 
+vector<ROB_info*> ReorderBuffer::readInfo(){
+	vector<ROB_info*> info;
+
+	for (int i = 0; i < entry_file.size(); i++){
+		info.push_back(new ROB_info);
+		info[i]->pc = entry_file[i]->pc;
+		info[i]->stage = entry_file[i]->stage;
+	}
+	return info;
+}
+
 void ReorderBuffer::print(){
 	string busy, ready, pc, stage, dest, value, reg, head;
 	stringstream ss;
@@ -377,14 +388,13 @@ std::vector<unsigned> FPRegisterUnit::getRestoreData(std::vector<unsigned> regs)
 	for (i; i >= 0; i--){
 		if (numRecieved <= 0) break;
 		for (int j = 0; j < regs.size(); j++){
-			if (results_buffer[i]->register_number = regs[j]){
+			if (results_buffer[i]->register_number == regs[j]){
 				results.insert(results.begin(), results_buffer[i]->data);
 				numRecieved--;
 				j++;
 			}
 		}
 	}
-
 	return results;
 }
 
@@ -653,10 +663,10 @@ void ExecUnitFile::assign(unsigned op1, unsigned op2, operation_t op_type, unsig
 			nonAvailable = false;
 		}
 		catch (exception &e){
-			cerr << "Exec " << e.what();
+			cerr << "Exec is processing, " << e.what();
 		}
 	}
-	if (nonAvailable) throw HardwareException("Exec");
+	if (nonAvailable) throw HardwareException("No exec units available, ");
 }
 
 void ExecUnitFile::Exec::push_operands(unsigned op1, unsigned op2, operation_t op_type, unsigned dest){

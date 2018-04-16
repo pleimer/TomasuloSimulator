@@ -57,7 +57,14 @@ sim_ooo::sim_ooo(unsigned mem_size,
 	data_memory = new unsigned char[data_memory_size];
 	fill_n(data_memory, data_memory_size, 0xFF);
 
+	num_cycles = 0;
+
+	for (int i = 0; i < rob_size; i++){
+		pending.push_back(new Entry);
+		pending[i]->assign_entry(UNDEFINED, UNDEFINED, UNDEFINED, UNDEFINED, UNDEFINED);
+	}
 	
+
 	pipeline = new Pipeline(mem_size,
 							rob_size,
 							num_int_res_stations,
@@ -105,6 +112,7 @@ void sim_ooo::run(unsigned cycles){
 			for (int i = 0; i < cycles; i++){
 				pipeline->cycle();
 				controller->execute();
+				num_cycles++;
 			}
 		}
 		else{
@@ -117,7 +125,7 @@ void sim_ooo::run(unsigned cycles){
 					cout << "Reached EOP" << endl;
 					break;
 				}
-
+				num_cycles++;
 			}
 		}
 	}
@@ -220,9 +228,85 @@ void sim_ooo::print_reservation_stations(){
 }
 
 void sim_ooo::print_pending_instructions(){
+
+
 	cout << "PENDING INSTRUCTIONS STATUS" << endl;
 	cout << setfill(' ');
-	cout << setw(10) << "PC" << setw(7) << "Issue" << setw(7) << "Exe" << setw(7) << "WR" << setw(7) << "Commit";
+	cout << setw(10) << "PC" << setw(7) << "Issue" << setw(7) << "Exe" << setw(7) << "WR" << setw(7) << "Commit" << endl;
+
+	string pc, issue, exec, wr, commit;
+	stringstream ss;
+
+	vector<ROB_info*> info;
+
+	info = pipeline->ROB->readInfo();
+
+	for (int i = 0; i < info.size(); i++){//see if entry is already being displayed and update info
+		pending[i]->pc = info[i]->pc;
+		switch (info[i]->stage){
+		case ISSUE:
+			pending[i]->issue_cycle = num_cycles-1;
+			break;
+		case EXECUTE:
+			pending[i]->exec_cycle = num_cycles-1;
+			break;
+		case WRITE_RESULT:
+			pending[i]->wr_cycle = num_cycles-1;
+			break;
+		case COMMIT:
+			pending[i]->commit_cycle = num_cycles-1;
+			break;
+		default: break;
+		}
+		if (pending[i]->pc == UNDEFINED) pending[i]->assign_entry(UNDEFINED, UNDEFINED, UNDEFINED, UNDEFINED, UNDEFINED);
+	}
+
+
+	for (int i = 0; i < pending.size(); i++){
+		pc = "-";
+		issue = "-";
+		exec = "-";
+		wr = "-";
+		commit = "-";
+
+		ss.str("");
+		ss.clear();
+		if (pending[i]->pc != UNDEFINED){
+			ss << "0x" << setw(8) << setfill('0') << hex << info[i]->pc;
+			pc = ss.str();
+		}
+
+		ss.str("");
+		ss.clear();
+		if (pending[i]->issue_cycle != UNDEFINED){
+			ss << setw(7) << setfill(' ') << dec << pending[i]->issue_cycle;
+			issue = ss.str();
+		}
+
+		ss.str("");
+		ss.clear();
+		if (pending[i]->exec_cycle != UNDEFINED){
+			ss << setw(7) << setfill(' ') << dec << pending[i]->exec_cycle;
+			exec = ss.str();
+		}
+
+		ss.str("");
+		ss.clear();
+		if (pending[i]->wr_cycle != UNDEFINED){
+			ss << setw(7) << setfill(' ') << dec << pending[i]->wr_cycle;
+			wr = ss.str();
+		}
+
+		ss.str("");
+		ss.clear();
+		if (pending[i]->commit_cycle != UNDEFINED){
+			ss << setw(7) << setfill(' ') << dec << pending[i]->commit_cycle;
+			commit = ss.str();
+		}
+
+		cout << setw(10) << pc << setw(7) << issue << setw(7) << exec << setw(7) << wr << setw(7) << commit << endl;
+	}
+	
 	cout << endl;
 }
 
@@ -233,7 +317,7 @@ void sim_ooo::print_log(){
 
 float sim_ooo::get_IPC(){
 	float inst_exec = unsigned2float(controller->getInstExecuted());
-	float cycles = unsigned2float(pipeline->getCycles());
+	float cycles = unsigned2float(num_cycles);
 	return inst_exec/cycles; //fill here
 }
 	
@@ -242,6 +326,15 @@ unsigned sim_ooo::get_instructions_executed(){
 }
 
 unsigned sim_ooo::get_clock_cycles(){
-	return pipeline->getCycles(); //fill here
+	return num_cycles; //fill here
 }
+
+void Entry::assign_entry(unsigned pc, unsigned issue_cycle, unsigned exec_cycle, unsigned wr_cycle, unsigned commit_cycle){
+	this->pc = pc;
+	this->issue_cycle = issue_cycle;
+	this->exec_cycle = exec_cycle;
+	this->wr_cycle = wr_cycle;
+	this->commit_cycle = commit_cycle;
+}
+
 

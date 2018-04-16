@@ -5,7 +5,20 @@
 #include <stdbool.h>
 #include <string.h>
 #include <sstream>
+#include <map>
 #include "controller.h"
+
+
+struct Entry{
+	unsigned pc;
+	unsigned issue_cycle;
+	unsigned exec_cycle;
+	unsigned wr_cycle;
+	unsigned commit_cycle;
+
+	void assign_entry(unsigned pc, unsigned issue_cycle, unsigned exec_cycle, unsigned wr_cycle, unsigned commit_cycle);
+};
+
 
 
 class sim_ooo{
@@ -21,6 +34,12 @@ class sim_ooo{
 	//pipeline and controller implementations
 	Pipeline * pipeline;
 	Controller * controller;
+
+	//keep track of clock cycles
+	unsigned num_cycles;
+
+	std::vector<Entry*> pending;
+
 
 public:
 
